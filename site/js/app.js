@@ -23,6 +23,8 @@
     [/^#\/framework$/, frameworkPage],
     [/^#\/progress$/, progressPage],
     [/^#\/notes$/, notesPage],
+    [/^#\/cert$/, certPage],
+    [/^#\/cert\/exam(?:\?mode=([\w-]+))?$/, examPage],
     [/^#\/build\/(design|company)\/([\w-]+)$/, (k, id) => itemPage((k === 'design' ? SD.designs : SD.companies).find((c) => c.id === id), buildPage)],
   ];
 
@@ -122,6 +124,12 @@
     return h('div', { class: 'detail' }, toc, body);
   }
 
+  /* order[k] = original option index shown at position k; rewrite "(B)" / "Option B" to the displayed letter */
+  function remapLetters(text, order) {
+    const L = 'ABCD';
+    const to = (ch) => { const i = L.indexOf(ch); const k = order.indexOf(i); return k >= 0 ? L[k] : ch; };
+    return String(text || '').replace(/\(([A-D])\)/g, (m, c) => `(${to(c)})`).replace(/\b([Oo]ptions?) ([A-D])\b/g, (m, w, c) => `${w} ${to(c)}`);
+  }
   function quiz(item) {
     const qs = item.quiz || [];
     if (!qs.length) return null;
@@ -132,10 +140,14 @@
     box.append(h('p', { class: 'muted' }, 'Test your understanding. ', prev ? `Last score: ${prev.score}/${prev.total}. ` : '', 'Score: ', scoreEl));
     qs.forEach((q, qi) => {
       const card = h('div', { class: 'quiz-q' }, h('div', { class: 'q', html: `Q${qi + 1}. ${inline(q.q)}` }));
-      const ex = h('div', { class: 'quiz-explain hidden', html: md(q.explain || '') });
-      const btns = q.options.map((o, oi) => h('button', { class: 'quiz-opt', html: inline(o), onclick: () => {
-        btns.forEach((b, bi) => { b.disabled = true; if (bi === q.answer) b.classList.add('right'); });
-        if (oi !== q.answer) btns[oi].classList.add('wrong'); else right++;
+      let ex;
+      const order = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+      const byOpt = {};
+      ex = h('div', { class: 'quiz-explain hidden', html: md(remapLetters(q.explain, order)) });
+      const btns = order.map((oi, k) => (byOpt[oi] = h('button', { class: 'quiz-opt', onclick: () => {
+        btns.forEach((b) => { b.disabled = true; });
+        byOpt[q.answer].classList.add('right');
+        if (oi !== q.answer) byOpt[oi].classList.add('wrong'); else right++;
         answered++;
         ex.classList.remove('hidden');
         scoreEl.textContent = `${right} / ${qs.length}`;
@@ -143,7 +155,7 @@
           SD.progress.setQuiz(item.id, right, qs.length);
           SD.toast(right === qs.length ? '🎉 Perfect score!' : `Quiz finished: ${right}/${qs.length}`);
         }
-      } }));
+      } }, h('span', { class: 'opt-l' }, 'ABCD'[k]), h('span', { html: inline(q.options[oi]) }))));
       card.append(...btns, ex);
       box.append(card);
     });
@@ -251,6 +263,10 @@
       mount(sectionHead(3, 'Real company architectures', '#/companies', 'All companies'));
       mount(h('div', { class: 'grid cols-3' }, SD.companies.map(tile)));
     }
+    mount(h('a', { class: 'cert-banner', href: '#/cert' },
+      h('span', { class: 'cb-ic' }, '🎓'),
+      h('div', {}, h('b', {}, 'Preparing for Claude Certified Architect – Foundations?'), h('div', { class: 'muted small' }, 'All 30 task statements, the 6 exam scenarios, readiness by domain and a timed practice exam weighted like the real one.')),
+      h('span', { class: 'btn primary' }, 'Open the cert hub →')));
     mount(sectionHead(4, 'Hands-on simulators', '#/playground', 'Open playground'));
     mount(h('div', { class: 'grid cols-4' }, Object.values(SD.sims).map((s, i) => h('a', { class: 'tile', href: '#/playground#' + s.id, style: `--i:${i}` },
       h('div', { class: 't-top' }, h('div', { class: 't-icon' }, s.icon || '🎮'), h('span', { class: 't-code', html: `<b>SIM</b>-${String(i + 1).padStart(2, '0')}` })),
@@ -271,6 +287,7 @@
       { t: 'Practice — Easy designs', d: 'Single-purpose systems that exercise one or two building blocks deeply.', items: ds('easy') },
       { t: 'Practice — Medium designs', d: 'Full products: feeds, chat, media, commerce. Multiple services and data stores.', items: ds('medium') },
       { t: 'Practice — Hard designs', d: 'Real-time geo, collaboration, global storage and coordination problems.', items: ds('hard') },
+      { t: 'Claude Certified Architect prep', d: 'Exam-aligned pages for all 30 task statements plus the 6 exam scenarios — then sit a timed practice exam.', items: [...SD.concepts.filter((c) => c.category === 'cca').sort((a, b) => a.domain - b.domain || a.order - b.order), ...SD.designs.filter((d) => d.track === 'cca')] },
       { t: 'Real-world architectures & papers', d: 'How real companies solved it, and the papers that started it all.', items: [...SD.companies, ...SD.papers] },
     ];
     mount(pageHead('PATH', 'Learning path', 'Follow the stages in order, or jump around. Each item has explanations, visuals and a quiz; mark it learned to track your progress.'));
@@ -319,7 +336,7 @@
   function designsList() {
     document.title = 'System Designs · The System Design Chronicle';
     filterableList('🏗️ System designs', 'Complete designs — requirements, capacity math, APIs, data models, animated architecture, deep dives, failure modes and a quiz.',
-      SD.designs.slice().sort(sortDesigns), [{ id: 'easy', name: 'Easy' }, { id: 'medium', name: 'Medium' }, { id: 'hard', name: 'Hard' }, { id: 'genai', name: 'GenAI', icon: '🤖', test: (x) => x.track === 'genai' }], 'difficulty');
+      SD.designs.slice().sort(sortDesigns), [{ id: 'easy', name: 'Easy' }, { id: 'medium', name: 'Medium' }, { id: 'hard', name: 'Hard' }, { id: 'genai', name: 'GenAI', icon: '🤖', test: (x) => x.track === 'genai' }, { id: 'cca', name: 'Claude cert', icon: '🎓', test: (x) => x.track === 'cca' }], 'difficulty');
   }
   function companiesList() {
     document.title = 'Company Architectures · The System Design Chronicle';
@@ -344,6 +361,8 @@
             item.difficulty ? meter(item.difficulty) : null,
             item.difficulty ? h('span', { class: 'chip ' + item.difficulty }, item.difficulty) : null,
             item.category ? h('span', { class: 'chip' }, catName(item.category)) : null,
+            item.domain ? h('a', { class: 'chip cca-chip', href: '#/cert' }, `🎓 Domain ${item.domain}${item.tasks ? ' · Task ' + item.tasks.join(', ') : ''}`) : null,
+            item.track === 'cca' && item.domains ? h('a', { class: 'chip cca-chip', href: '#/cert' }, `🎓 Exam scenario · Domains ${item.domains.join(', ')}`) : null,
             item.company ? h('span', { class: 'chip' }, item.company) : null,
             item.year ? h('span', { class: 'chip' }, item.year) : null,
             h('span', { class: 'chip time' }, `⏱ ~${SD.minutes(item)} min`),
@@ -389,6 +408,7 @@
     }
     if (c.sims && c.sims.length) { const s = section('sim', 'Try it yourself'); mountSims(c.sims, s); body.append(s); }
     if (c.compare) body.append(section('compare', c.compare.title || 'Comparison', table(c.compare.headers, c.compare.rows)));
+    if (c.antiPatterns) body.append(section('anti', 'Anti-patterns the exam tests', h('div', { class: 'callout warn', html: md(c.antiPatterns.map((k) => '- ❌ ' + k).join('\n')) })));
     if (c.keyPoints) body.append(section('key', 'Key takeaways', h('div', { class: 'callout good', html: md(c.keyPoints.map((k) => '- ' + k).join('\n')) })));
     if (c.pitfalls) body.append(section('pitfalls', 'Common pitfalls', h('div', { class: 'callout warn', html: md(c.pitfalls.map((k) => '- ' + k).join('\n')) })));
     if (c.realWorld) body.append(section('real', 'In the real world', h('div', { html: md(c.realWorld.map((k) => '- ' + k).join('\n')) })));
@@ -751,6 +771,149 @@
     };
     document.addEventListener('keydown', onKey);
     cleanup.push(() => document.removeEventListener('keydown', onKey));
+    draw();
+  }
+
+  /* =================== Claude Certified Architect hub =================== */
+  const ccaPages = (n) => SD.concepts.filter((c) => c.category === 'cca' && (!n || c.domain === n)).sort((a, b) => a.order - b.order);
+  const ccaScenarios = () => SD.designs.filter((d) => d.track === 'cca').sort((a, b) => (a.order || 0) - (b.order || 0));
+  function pageReadiness(x) {
+    if (SD.progress.isDone(x.id)) return 1;
+    const q = SD.progress.getQuiz(x.id);
+    if (q) return 0.75 * (q.score / q.total);
+    return SD.progress.status(x.id) === 'started' ? 0.1 : 0;
+  }
+  function domainReadiness(n) {
+    const items = [...ccaPages(n), ...ccaScenarios().filter((d) => (d.domains || [])[0] === n)];
+    const ex = (JSON.parse(localStorage.getItem('sd-cca-attempts') || '[]').slice(-3));
+    const exScore = ex.length ? ex.reduce((m, a) => m + ((a.byDomain[n] || { c: 0, t: 0 }).t ? a.byDomain[n].c / a.byDomain[n].t : 0), 0) / ex.length : null;
+    const study = items.length ? items.reduce((m, x) => m + pageReadiness(x), 0) / items.length : 0;
+    return exScore == null ? study : 0.6 * study + 0.4 * exScore;
+  }
+  function readinessDonut() {
+    const R = 74, C = 2 * Math.PI * R; let off = 0;
+    const cols = ['#8b5cf6', '#22d3ee', '#f472b6', '#fbbf24', '#34d399'];
+    const total = SD.CCA.domains.reduce((m, d) => m + d.weight * domainReadiness(d.n), 0);
+    let segs = '';
+    SD.CCA.domains.forEach((d, i) => {
+      const len = (d.weight / 100) * C, filled = len * domainReadiness(d.n);
+      segs += `<circle r="${R}" cx="100" cy="100" fill="none" stroke="${cols[i]}" stroke-opacity=".22" stroke-width="22" stroke-dasharray="${len - 3} ${C}" stroke-dashoffset="${-off}"/>`;
+      segs += `<circle r="${R}" cx="100" cy="100" fill="none" stroke="${cols[i]}" stroke-width="22" stroke-dasharray="${Math.max(0, filled - 3)} ${C}" stroke-dashoffset="${-off}"><title>Domain ${d.n}: ${Math.round(domainReadiness(d.n) * 100)}%</title></circle>`;
+      off += len;
+    });
+    return h('div', { class: 'donut', html: `<svg viewBox="0 0 200 200" style="transform:rotate(-90deg)">${segs}</svg><div class="donut-c"><b>${Math.round(total)}%</b><span>exam readiness</span></div>` });
+  }
+  function certPage() {
+    document.title = 'Claude Certified Architect · The System Design Chronicle';
+    const E = SD.CCA.exam;
+    mount(pageHead('CCA', 'Claude Certified Architect — Foundations', 'Prep track built on the official exam guide: every task statement explained with visuals and anti-patterns, the six exam scenarios as interactive architectures, and practice exams weighted like the real blueprint. Questions here are original practice items, not real exam content.'));
+    mount(h('div', { class: 'cert-top' },
+      h('div', { class: 'card' }, h('div', { class: 'c-title' }, 'Exam at a glance'),
+        h('div', { class: 'stats' }, stat(E.items, 'questions'), stat(E.minutes + 'm', 'time limit'), stat(E.pass, 'pass / 1,000'), stat('4 / 6', 'scenarios'), stat(E.fee.replace(' USD', ''), 'fee')),
+        h('p', { class: 'small muted' }, `Exam code ${E.code} · scenario-based multiple-choice and multiple-response · proctored · credential valid ${E.validity} · ${E.version}. Always confirm details in the `, h('a', { href: SD.CCA.guide, target: '_blank', rel: 'noopener' }, 'official guide ↗'), '.'),
+        h('div', { class: 'cta' },
+          h('a', { class: 'btn primary', href: '#/cert/exam?mode=full' }, '⏱ Full practice exam · 60 Q · 120 min'),
+          h('a', { class: 'btn', href: '#/cert/exam?mode=quick' }, '⚡ Quick drill · 15 Q · 25 min'))),
+      h('div', { class: 'card readiness' }, h('div', { class: 'c-title' }, 'Your readiness'), readinessDonut(),
+        h('div', { class: 'small muted' }, 'Weighted by the exam blueprint. Grows as you mark pages learned, score quizzes and sit practice exams.'))));
+    const attempts = JSON.parse(localStorage.getItem('sd-cca-attempts') || '[]');
+    if (attempts.length) mount(h('div', { class: 'card', style: 'margin-top:16px' }, h('div', { class: 'c-title' }, `Practice exam history (${attempts.length})`),
+      h('div', { class: 'attempts' }, attempts.slice(-8).reverse().map((a) => h('div', { class: 'att ' + (a.scaled >= 720 ? 'ok' : 'miss') }, h('b', {}, a.scaled), h('span', {}, `${a.correct}/${a.total} · ${a.mode} · ${new Date(a.at).toLocaleDateString()}`))))));
+    SD.CCA.domains.forEach((d) => {
+      const pages = ccaPages(d.n);
+      const r = Math.round(domainReadiness(d.n) * 100);
+      mount(h('div', { class: 'section-head' }, h('div', {}, h('span', { class: 'sec-num' }, `DOMAIN ${d.n} · ${d.weight}% OF EXAM`), h('h2', {}, d.icon + ' ' + d.name)),
+        h('a', { href: `#/cert/exam?mode=d${d.n}` }, `Drill domain ${d.n} →`)));
+      mount(h('div', { class: 'domain-bar' }, h('div', { class: 'progress-bar' }, h('div', { style: `width:${r}%` })), h('span', { class: 'muted small' }, `${r}% ready · ${pages.length} task pages`)));
+      mount(h('div', { class: 'grid cols-3' }, pages.length ? pages.map((p, i) => { const tl = tile(p, i); tl.querySelector('.t-code').innerHTML = `<b>TASK</b> ${(p.tasks || []).join(', ')}`; return tl; }) : h('div', { class: 'empty' }, 'Content for this domain is being written.')));
+    });
+    const sc = ccaScenarios();
+    mount(sectionHead(6, 'The six exam scenarios', null));
+    mount(h('p', { class: 'muted' }, 'Four of these six are drawn at random on exam day. Each one is a full interactive architecture with flows, chaos mode, guided build and scenario questions.'));
+    mount(h('div', { class: 'grid cols-3' }, sc.length ? sc.map((x, i) => { const tl = tile(x, i); tl.querySelector('.t-code').innerHTML = `<b>SCN</b>-${i + 1} · D${(x.domains || []).join(' D')}`; return tl; }) : h('div', { class: 'empty' }, 'Scenario architectures are being written.')));
+  }
+
+  /* =================== Practice exam =================== */
+  function buildPool() {
+    const pool = [];
+    ccaPages().forEach((p) => (p.quiz || []).forEach((q, i) => pool.push({ ...q, domain: p.domain, src: p, key: p.id + ':' + i })));
+    ccaScenarios().forEach((d) => (d.quiz || []).forEach((q, i) => pool.push({ ...q, domain: (d.domains || [1])[0], src: d, key: d.id + ':' + i, scenario: d.title })));
+    return pool;
+  }
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  function examPage(mode = 'quick') {
+    document.title = 'Practice exam · The System Design Chronicle';
+    const pool = buildPool();
+    const dm = /^d(\d)$/.exec(mode);
+    const N = mode === 'full' ? 60 : 15, minutes = mode === 'full' ? 120 : dm ? 20 : 25;
+    let qs = [];
+    if (dm) qs = shuffle(pool.filter((q) => q.domain === +dm[1])).slice(0, N);
+    else {
+      SD.CCA.domains.forEach((d) => { const want = Math.round((N * d.weight) / 100); qs.push(...shuffle(pool.filter((q) => q.domain === d.n)).slice(0, want)); });
+      if (qs.length < N) qs.push(...shuffle(pool.filter((q) => !qs.includes(q))).slice(0, N - qs.length));
+      qs = shuffle(qs.slice(0, N));
+    }
+    qs = qs.map((q) => { const order = shuffle(q.options.map((_, i) => i)); return { ...q, order, ans: null, flag: false }; });
+    const label = mode === 'full' ? 'Full practice exam' : dm ? `Domain ${dm[1]} drill` : 'Quick drill';
+    mount(h('div', { class: 'crumbs' }, h('a', { href: '#/' }, 'Chronicle'), ' / ', h('a', { href: '#/cert' }, 'Claude cert'), ' / ', label));
+    if (!qs.length) { mount(h('div', { class: 'empty' }, 'Practice questions are still being written — check back soon.')); return; }
+    let cur = 0, left = minutes * 60, finished = false;
+    const clock = h('b', { class: 'exam-clock' });
+    const nav = h('div', { class: 'exam-nav' });
+    const card = h('div', { class: 'step-card exam-card' });
+    const bar = h('div', { class: 'exam-bar card' }, h('b', {}, '🎓 ', label), h('span', { class: 'muted small' }, `${qs.length} questions · weighted by blueprint`), h('span', { style: 'flex:1' }), '⏱ ', clock,
+      h('button', { class: 'btn primary', onclick: () => { const un = qs.filter((q) => q.ans == null).length; if (!un || confirm(`${un} unanswered. Submit anyway?`)) finish(); } }, 'Submit'));
+    mount(bar); mount(h('div', { class: 'exam-wrap' }, card, nav));
+    const tick = () => { if (finished) return; left--; clock.textContent = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`; clock.classList.toggle('low', left < 300); if (left <= 0) finish(); };
+    tick(); left++; tick();
+    const timer = setInterval(tick, 1000);
+    cleanup.push(() => clearInterval(timer));
+    const drawNav = () => { nav.innerHTML = ''; qs.forEach((q, i) => nav.append(h('button', { class: 'qn' + (i === cur ? ' cur' : '') + (q.ans != null ? ' done' : '') + (q.flag ? ' flag' : ''), onclick: () => { cur = i; draw(); } }, i + 1))); };
+    const draw = () => {
+      const q = qs[cur];
+      card.innerHTML = '';
+      card.append(h('div', { class: 'step-eyebrow' }, `QUESTION ${cur + 1} / ${qs.length}`, h('span', {}, `Domain ${q.domain}${q.scenario ? ' · ' + q.scenario : ''}`)),
+        h('div', { class: 'q exam-q', html: inline(q.q) }),
+        h('div', {}, q.order.map((oi, k) => h('button', { class: 'quiz-opt' + (q.ans === oi ? ' picked' : ''), onclick: () => { q.ans = oi; draw(); } }, h('span', { class: 'opt-l' }, 'ABCD'[k] || k + 1), h('span', { html: inline(q.options[oi]) })))),
+        h('div', { class: 'step-nav' },
+          h('button', { class: 'btn', disabled: cur === 0 ? '' : null, onclick: () => { cur--; draw(); } }, '← Prev'),
+          h('button', { class: 'btn' + (q.flag ? ' good' : ''), onclick: () => { q.flag = !q.flag; draw(); } }, q.flag ? '🚩 Flagged' : '🏳 Flag for review'),
+          cur < qs.length - 1 ? h('button', { class: 'btn primary', onclick: () => { cur++; draw(); } }, 'Next →') : h('button', { class: 'btn primary', onclick: () => bar.querySelector('.btn.primary').click() }, 'Review & submit')));
+      drawNav();
+    };
+    const onKey = (e) => {
+      if (finished || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+      const k = 'abcd'.indexOf(e.key.toLowerCase());
+      if (k >= 0 && qs[cur].order[k] != null) { qs[cur].ans = qs[cur].order[k]; draw(); }
+      else if (e.key === 'ArrowRight' && cur < qs.length - 1) { cur++; draw(); } else if (e.key === 'ArrowLeft' && cur > 0) { cur--; draw(); }
+    };
+    document.addEventListener('keydown', onKey);
+    cleanup.push(() => document.removeEventListener('keydown', onKey));
+    function finish() {
+      finished = true; clearInterval(timer);
+      const correct = qs.filter((q) => q.ans === q.answer).length;
+      const pct = correct / qs.length;
+      const scaled = Math.round(100 + 900 * pct);
+      const byDomain = {};
+      qs.forEach((q) => { const b = (byDomain[q.domain] = byDomain[q.domain] || { c: 0, t: 0 }); b.t++; if (q.ans === q.answer) b.c++; });
+      const hist = JSON.parse(localStorage.getItem('sd-cca-attempts') || '[]');
+      hist.push({ at: Date.now(), mode: label, correct, total: qs.length, scaled, byDomain });
+      localStorage.setItem('sd-cca-attempts', JSON.stringify(hist.slice(-50)));
+      bar.remove(); nav.remove();
+      card.innerHTML = '';
+      card.append(h('div', { class: 'exam-result ' + (scaled >= 720 ? 'ok' : 'miss') }, h('div', { class: 'big' }, scaled), h('div', {}, h('b', {}, scaled >= 720 ? '✓ Above the 720 pass line' : '✗ Below the 720 pass line'),
+        h('div', { class: 'muted small' }, `${correct}/${qs.length} correct (${Math.round(pct * 100)}%). Estimated with a simple linear scale — the real exam uses its own scaling, so treat this as a signal, not a prediction.`))),
+        h('div', { class: 'c-title', style: 'margin-top:14px' }, 'By domain'),
+        h('div', {}, SD.CCA.domains.filter((d) => byDomain[d.n]).map((d) => { const b = byDomain[d.n]; const p = Math.round((b.c / b.t) * 100); return h('div', { class: 'dom-row' }, h('span', {}, `D${d.n} ${d.name}`), h('div', { class: 'progress-bar' }, h('div', { style: `width:${p}%` })), h('b', {}, `${b.c}/${b.t}`)); })),
+        h('div', { class: 'c-title', style: 'margin-top:18px' }, `Review (${qs.length - correct} to revisit)`),
+        h('div', {}, qs.map((q, i) => h('details', { class: 'dive', open: q.ans !== q.answer ? '' : null },
+          h('summary', {}, (q.ans === q.answer ? '✅ ' : '❌ ') + `Q${i + 1} · Domain ${q.domain}`),
+          h('div', { class: 'dive-body' }, h('div', { html: inline(q.q) }),
+            h('div', { class: 'small', style: 'margin:8px 0' }, h('div', { html: `✅ ${'ABCD'[q.order.indexOf(q.answer)]}. ` + inline(q.options[q.answer]) }), q.ans != null && q.ans !== q.answer ? h('div', { style: 'color:var(--bad)', html: `✗ Your answer ${'ABCD'[q.order.indexOf(q.ans)]}. ` + inline(q.options[q.ans]) }) : q.ans == null ? h('div', { class: 'muted' }, 'Not answered') : null),
+            h('div', { class: 'callout', html: md(remapLetters(q.explain, q.order)) }), h('a', { href: SD.linkFor(q.src) }, `Study: ${q.src.title} →`))))),
+        h('div', { class: 'step-nav' }, h('a', { class: 'btn', href: '#/cert' }, '← Cert hub'), h('button', { class: 'btn primary', onclick: () => render() }, '↻ New exam')));
+      window.scrollTo({ top: 0 });
+    }
     draw();
   }
 

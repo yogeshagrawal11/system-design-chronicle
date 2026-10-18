@@ -324,3 +324,15 @@ html[data-skin="glass"][data-theme="light"] {
   [data-skin="glass"] .nav.open { top: calc(100% + 8px); background: rgba(250, 248, 255, .97); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
   [data-skin="glass"]:not([data-theme="light"]) .nav.open { background: rgba(14, 11, 28, .97); }
 }
+[data-skin="glass"] .cert-banner { border-radius: var(--radius); background: linear-gradient(120deg, rgba(139, 92, 246, .18), rgba(255, 79, 216, .1)), var(--panel); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--glass-shadow); }
+[data-skin="glass"] .cert-top .c-title, [data-skin="glass"] .card .c-title { font-family: var(--sans); }
+[data-skin="glass"] .exam-bar { -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+@media (min-width: 981px) and (max-width: 1500px) { [data-skin="glass"] .nav a { padding: 7px 7px; font-size: .84rem; } [data-skin="glass"] .search-wrap input { width: 150px; } }
+@media (min-width: 981px) and (max-width: 1366px) {
+  [data-skin="glass"] .topbar { gap: 10px; }
+  [data-skin="glass"] .nav a { padding: 6px 6px; font-size: .8rem; }
+  [data-skin="glass"] .search-wrap input { width: 110px; }
+  [data-skin="glass"] .brand .bt span { display: none; }
+  [data-skin="glass"] .brand .bt b { font-size: .9rem; }
+}
+@media (min-width: 981px) and (max-width: 1180px) { [data-skin="glass"] .brand .bt b:not(.bt-short) { display: none; } [data-skin="glass"] .brand .bt .bt-short { display: block; } }

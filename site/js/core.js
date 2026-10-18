@@ -20,8 +20,20 @@
     { id: 'patterns', name: 'Architectural Patterns', icon: '🖇️' },
     { id: 'tradeoffs', name: 'Trade-offs', icon: '⚖️' },
     { id: 'genai', name: 'GenAI Systems', icon: '🤖' },
+    { id: 'cca', name: 'Claude Architect Cert', icon: '🎓' },
   ];
   SD.DIFFICULTIES = ['easy', 'medium', 'hard'];
+  SD.CCA = {
+    exam: { code: 'CCAR-F', items: 60, minutes: 120, pass: 720, scale: '100–1,000', fee: '$125 USD', scenarios: '4 of 6, picked at random', validity: '12 months', version: 'Exam guide v1.0 · effective July 2026' },
+    domains: [
+      { n: 1, name: 'Agentic Architecture & Orchestration', weight: 27, icon: '🕸️' },
+      { n: 2, name: 'Tool Design & MCP Integration', weight: 18, icon: '🔧' },
+      { n: 3, name: 'Claude Code Configuration & Workflows', weight: 20, icon: '⌨️' },
+      { n: 4, name: 'Prompt Engineering & Structured Output', weight: 20, icon: '🧾' },
+      { n: 5, name: 'Context Management & Reliability', weight: 15, icon: '🧠' },
+    ],
+    guide: 'https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification',
+  };
 
   /* ---------- tiny markdown: **b**, *i*, `code`, [t](url), "- " lists, blank-line paragraphs, ```code``` ---------- */
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

@@ -93,3 +93,14 @@ Required: `id, title, year, authors, icon, tagline, summary, problem, quiz (≥3
 **Papers**: paper-paxos, paper-mapreduce, paper-gfs, paper-dynamo, paper-kafka, paper-spanner, paper-bigtable, paper-zookeeper, paper-lsm-tree, paper-chubby
 
 **Simulators**: consistent-hashing, rate-limiter, cache-eviction, load-balancer, cap-theorem, sharding, bloom-filter, quorum-replication, circuit-breaker, estimator, raft-election, gossip, queue-vs-pubsub, tcp-vs-udp, caching-patterns, idempotency
+
+
+## Claude Certified Architect (CCA) track
+Syllabus: the official exam guide (5 domains, 30 task statements, 6 scenarios). Concepts use `category: 'cca'` plus:
+- `domain`: 1–5, `tasks`: ['1.1'] (task statement numbers covered), `order`: task order within the domain.
+- `antiPatterns`: [strings] — the wrong approaches the exam tests against (rendered as a warning box).
+- `quiz`: ≥6 ORIGINAL scenario-style questions (production context → "what is the most effective change?"), 4 options, one best answer, explanation of why each distractor is weaker. Never copy the guide's sample questions.
+Scenario designs use the normal design schema plus `track: 'cca'`, `domains: [n,...]`.
+
+CCA ids — concepts: D1 cca-agentic-loop (1.1), cca-coordinator-subagents (1.2), cca-subagent-context (1.3), cca-workflow-enforcement (1.4), cca-agent-sdk-hooks (1.5), cca-task-decomposition (1.6), cca-session-management (1.7) · D2 cca-tool-descriptions (2.1), cca-mcp-errors (2.2), cca-tool-distribution (2.3), cca-mcp-integration (2.4), cca-builtin-tools (2.5) · D3 cca-claude-md (3.1), cca-commands-skills (3.2), cca-path-rules (3.3), cca-plan-mode (3.4), cca-iterative-refinement (3.5), cca-claude-code-ci (3.6) · D4 cca-explicit-criteria (4.1), cca-few-shot (4.2), cca-structured-output (4.3), cca-validation-retry (4.4), cca-batch-processing (4.5), cca-multi-pass-review (4.6) · D5 cca-context-preservation (5.1), cca-escalation (5.2), cca-error-propagation (5.3), cca-codebase-context (5.4), cca-human-review (5.5), cca-provenance (5.6)
+CCA ids — scenario designs: cca-support-agent, cca-code-generation, cca-research-system, cca-dev-productivity, cca-ci-review, cca-data-extraction
