@@ -784,6 +784,7 @@
   /* =================== Search =================== */
   function setupSearch() {
     const input = document.getElementById('search');
+    if (matchMedia('(hover: none)').matches) input.placeholder = 'Search topics…';
     const res = document.getElementById('search-results');
     let sel = 0, items = [];
     const all = () => [...SD.concepts, ...SD.designs, ...SD.companies, ...SD.papers];

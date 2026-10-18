@@ -644,3 +644,70 @@ svg .dg-node.pop { animation: popIn .55s cubic-bezier(.2, 1.4, .4, 1) both; tran
 @media (max-width: 1100px) { .build { grid-template-columns: 1fr; } .build-stage { position: relative; top: 0; } .build-top { position: relative; top: 0; } }
 .build-stage .dg-canvas svg { width: 100% !important; min-width: 0 !important; }
 [data-theme="light"] svg .dg-node.dim, [data-theme="light"] svg .dg-edge.dim { opacity: .58; }
+
+/* ====================== Phone layout ====================== */
+@media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; height: auto; padding: 8px 10px; row-gap: 8px; }
+  .brand { flex: 1; min-width: 0; }
+  .brand .bt { min-width: 0; }
+  .brand .bt b { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brand .bt span { display: none; }
+  .brand .logo { width: 30px; height: 30px; flex: none; }
+  .topbar .spacer { display: none; }
+  .search-wrap { order: 10; flex: 1 0 100%; }
+  .search-wrap input, .search-wrap input:focus { width: 100% !important; padding-right: 12px !important; }
+  .search-results { width: 100%; right: 0; left: 0; }
+  .nav.open { top: 100%; }
+  .eyebrow { font-size: .6rem; letter-spacing: .1em; }
+  .hero h1 { font-size: 2.7rem; }
+  .section-head { flex-wrap: wrap; }
+  .section-head h2 { font-size: 1.6rem; }
+  .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters button { flex: none; }
+  .filters input { min-width: 140px; margin-left: 0; }
+  .status-filters { margin-top: -14px; }
+  .status-filters .muted { flex: none; white-space: nowrap; }
+  .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+  .tile { min-height: 0; }
+  .detail-body > section > h2 { font-size: 1.35rem; }
+  .plate h1 { font-size: 2rem; }
+  .plate-actions .btn { flex: 1; justify-content: center; }
+  /* diagrams: compact toolbar, no keyboard-only controls */
+  .dg-toolbar { gap: 6px; padding: 8px; }
+  .dg-toolbar select { flex: 1 0 100%; max-width: none; }
+  .dg-toolbar label, .dg-toolbar .sep { display: none; }
+  .dg-toolbar .btn.small { padding: 6px 10px; }
+  .dg-steps { columns: 1; }
+  .dg-side { max-height: 240px; }
+  .dg-caption { font-size: .86rem; }
+  .build-head .bh-row > .muted { display: none; }
+  .build-head h1 { font-size: 1.7rem; }
+  .step-card { padding: 16px; }
+  .step-nav .btn { flex: 1; justify-content: center; }
+  .step-nav .btn.primary { flex-basis: 100%; order: -1; }
+  .calc-inputs input[type=number] { width: 104px; }
+  .flip, .flip-inner { min-height: 260px; }
+  .notes-fab { right: 12px; bottom: 12px; padding: 10px 13px; }
+  .notes-fab span { display: none; }
+  .notes-drawer { top: auto; right: 8px; left: 8px; bottom: 8px; width: auto; height: 70vh; }
+  .sim { padding: 14px 12px; }
+  .sim-head h3 { font-size: 1.15rem; }
+  footer { flex-direction: column; gap: 6px; text-align: center; }
+}
+/* touch devices: hide hover/keyboard hints, bigger tap targets */
+@media (hover: none) {
+  .kbd { display: none; }
+  .tile:hover { transform: none; }
+  .step-dots .dot { width: 36px; height: 36px; }
+}
+.dg-hint { position: sticky; left: 0; display: none; width: max-content; margin: 8px; padding: 4px 10px; border-radius: 99px; font-size: .72rem; font-weight: 700;
+  background: var(--panel-solid); border: 1px solid var(--border); color: var(--muted); pointer-events: none; transition: opacity .4s; }
+@media (hover: none) { .dg-hint { display: block; } }
+.brand .bt .bt-short { display: none; }
+@media (max-width: 640px) {
+  .brand .bt b:not(.bt-short) { display: none; }
+  .brand .bt .bt-short { display: block; }
+  .nav.open { top: calc(100% + 8px); left: 0; right: 0; background: var(--panel-solid); border: 1px solid var(--border-strong); border-radius: 16px; padding: 8px; box-shadow: var(--shadow); }
+  .nav.open a { padding: 12px 14px; font-size: .95rem; }
+}

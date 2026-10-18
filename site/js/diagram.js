@@ -72,7 +72,15 @@
     const gEdges = svgEl('g'), gNodes = svgEl('g'), gFx = svgEl('g');
     svg.append(gEdges, gNodes, gFx);
     canvas.append(svg);
-    const baseW = `max(100%, ${Math.round(maxX * 0.9)}px)`;
+    const phone = matchMedia('(max-width: 640px)').matches;
+    const touch = matchMedia('(hover: none)').matches;
+    const SCALE = phone ? 0.65 : 0.9;
+    const baseW = `max(100%, ${Math.round(maxX * SCALE)}px)`;
+    if (touch && !opts.compact) {
+      const hint = h('div', { class: 'dg-hint' }, '↔ swipe to explore · tap a component');
+      canvas.prepend(hint);
+      canvas.addEventListener('scroll', () => { hint.style.opacity = 0; }, { once: true });
+    }
     if (!opts.compact) svg.style.width = baseW;
 
     /* ---------- edges ---------- */
@@ -151,7 +159,7 @@
       side.append(
         h('h4', {}, '🧭 How to explore'),
         h('div', { class: 'small muted', html: md(
-          '- **Click** a component to see its role and tech choices.\n- **Hover** to highlight its connections.\n' +
+          (touch ? '- **Tap** a component to see its role, tech choices and connections.\n' : '- **Click** a component to see its role and tech choices.\n- **Hover** to highlight its connections.\n') +
           (flows.length ? '- Choose a **flow** and press **▶ Play** to animate a request step by step.\n' : '') +
           (failures.length ? '- Turn on **💥 Chaos mode**, then click a component to break it and see what happens.\n' : '') +
           '- Dashed lines = asynchronous (queue/event) paths.') }),
@@ -354,7 +362,7 @@
         toolbar.append(chaosBtn);
       }
       let zoom = 1;
-      const setZoom = (z) => { zoom = Math.max(.6, Math.min(2.5, z)); svg.style.width = `max(${zoom * 100}%, ${Math.round(maxX * 0.9 * zoom)}px)`; };
+      const setZoom = (z) => { zoom = Math.max(.6, Math.min(2.5, z)); svg.style.width = `max(${zoom * 100}%, ${Math.round(maxX * SCALE * zoom)}px)`; };
       toolbar.append(h('span', { class: 'sep' }),
         h('button', { class: 'btn small', title: 'Zoom out', onclick: () => setZoom(zoom - .2) }, '−'),
         h('button', { class: 'btn small', title: 'Zoom in', onclick: () => setZoom(zoom + .2) }, '+'),
