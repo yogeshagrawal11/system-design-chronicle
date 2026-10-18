@@ -643,3 +643,4 @@ svg .dg-node.pop { animation: popIn .55s cubic-bezier(.2, 1.4, .4, 1) both; tran
 
 @media (max-width: 1100px) { .build { grid-template-columns: 1fr; } .build-stage { position: relative; top: 0; } .build-top { position: relative; top: 0; } }
 .build-stage .dg-canvas svg { width: 100% !important; min-width: 0 !important; }
+[data-theme="light"] svg .dg-node.dim, [data-theme="light"] svg .dg-edge.dim { opacity: .58; }

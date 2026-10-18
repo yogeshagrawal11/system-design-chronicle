@@ -1,16 +1,22 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The System Design Chronicle</title>
+  <meta name="description" content="Learn how production systems really work: animated architectures, chaos mode, live capacity math, simulators and guided builds — from fundamentals to GenAI.">
+  <meta property="og:title" content="The System Design Chronicle">
+  <meta property="og:description" content="Interactive system design: 55 animated architectures, 79 concepts, real company case studies and 16 simulators.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://yogeshagrawal11.github.io/system-design-chronicle/">
+  <meta name="theme-color" content="#7c3aed">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Unbounded:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/glass.css">
-  <script>document.documentElement.dataset.skin = localStorage.getItem("sd-skin") || "glass"; document.documentElement.dataset.theme = localStorage.getItem("sd-theme") || "dark";</script>
+  <script>document.documentElement.dataset.skin = localStorage.getItem("sd-skin") || "glass"; document.documentElement.dataset.theme = localStorage.getItem("sd-theme-v2") || "light";</script>
 </head>
 <body>
   <div class="orbs"><span></span><span></span><span></span><span></span></div><div class="vignette"></div><div class="grain"></div>
@@ -33,7 +39,7 @@
       <div id="search-results" class="search-results hidden"></div>
     </div>
     <button class="icon-btn" id="skin" aria-label="Switch skin" title="Switch skin: glass / blueprint">🪟</button>
-    <button class="icon-btn" id="theme" aria-label="Toggle theme">☀️</button>
+    <button class="icon-btn" id="theme" aria-label="Toggle theme">🌙</button>
   </header>
   <main id="app"></main>
   <footer><span><span class="lamp"></span>&nbsp; The System Design Chronicle — drawing set rev. 2</span><span>Press / to search · Esc closes fullscreen</span><span>Written for learning · inspired by community resources</span></footer>

@@ -53,9 +53,16 @@ To start a new one: `cp templates/case-study-template.md 03-case-studies/<name>.
 
 `site/` is a dependency-free interactive learning site (animated architecture diagrams, step-through request flows, chaos/failure mode, live capacity calculators, simulators, quizzes, progress tracking).
 
+🌐 **Live:** https://yogeshagrawal11.github.io/system-design-chronicle/
+
 ```bash
 open site/index.html                         # works straight from disk
 # or: python3 -m http.server -d site 8000   → http://localhost:8000
 ```
 
 Authoring: see `site/tools/AUTHORING.md`. After adding data files run `python3 site/tools/build.py` (links scripts into index.html) and `node site/tools/validate.js`.
+
+### Deployment
+
+Every push to `main` that touches `site/` is validated and published to GitHub Pages by `.github/workflows/pages.yml`.
+One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.

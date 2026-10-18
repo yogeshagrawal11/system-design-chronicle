@@ -818,9 +818,9 @@
 
   function setupTheme() {
     const btn = document.getElementById('theme');
-    const apply = (t) => { document.documentElement.dataset.theme = t; btn.textContent = t === 'light' ? '🌙' : '☀️'; localStorage.setItem('sd-theme', t); };
-    apply(localStorage.getItem('sd-theme') || 'dark');
-    btn.onclick = () => apply(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+    const apply = (t, remember) => { document.documentElement.dataset.theme = t; btn.textContent = t === 'light' ? '🌙' : '☀️'; if (remember) localStorage.setItem('sd-theme-v2', t); };
+    apply(localStorage.getItem('sd-theme-v2') || 'light');
+    btn.onclick = () => apply(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light', true);
     const skinBtn = document.getElementById('skin');
     const applySkin = (k) => { document.documentElement.dataset.skin = k; skinBtn.textContent = k === 'glass' ? '📐' : '🪟'; skinBtn.title = k === 'glass' ? 'Switch to blueprint skin' : 'Switch to glass skin'; localStorage.setItem('sd-skin', k); };
     applySkin(localStorage.getItem('sd-skin') || 'glass');
