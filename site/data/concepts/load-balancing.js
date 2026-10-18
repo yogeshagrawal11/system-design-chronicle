@@ -1,0 +1,146 @@
+SD.concept({
+  id: 'load-balancing',
+  category: 'networking',
+  order: 7,
+  icon: '⚖️',
+  title: 'Load Balancing',
+  tagline: 'Spread requests across many servers, route around failures, and pick the right algorithm and layer.',
+  summary:
+    "A **load balancer** (LB) sits in front of a pool of servers and decides which one handles each request or connection. It is what makes horizontal scaling and high availability possible: add servers to the pool for capacity, and let **health checks** pull dead ones out automatically so users never notice.\n\n" +
+    "Two big choices define a load balancer: the **layer** it works at (**L4**: TCP/UDP connections by IP and port, very fast; **L7**: HTTP requests by host, path, headers or cookies, much smarter) and the **algorithm** it uses to pick a backend (round robin, least connections, power of two choices, consistent hashing...). Large systems stack several: DNS/anycast across regions → L4 in each region → L7 proxies → service instances.",
+  analogy:
+    "The host at a busy restaurant. Instead of letting every guest crowd the first table, the host seats each party at the next free table (round robin), or the table whose waiter has the fewest diners (least connections), skips tables whose waiter is on break (health checks), and seats regulars with their usual waiter (sticky sessions).",
+  sections: [
+    {
+      h: 'Algorithms',
+      md: "**Static** algorithms ignore current load; **dynamic** ones react to it. A useful default for most HTTP services: least outstanding requests, or *power of two choices*.",
+      table: {
+        headers: ['Algorithm', 'How it picks', 'Good for', 'Watch out for'],
+        rows: [
+          ['Round robin', 'Next server in a fixed rotation', 'Identical servers, uniform cheap requests', 'Ignores load; slow requests pile up on one server'],
+          ['Weighted round robin', 'Rotation where bigger servers appear more often (weights 3:1)', 'Mixed instance sizes, gradual canary (weight 1 of 100)', 'Weights are static'],
+          ['Random', 'Uniformly random server', 'Simple, stateless, works across many LB nodes', 'Uneven at small scale'],
+          ['Least connections', 'Fewest active connections', 'Long or variable-length requests, WebSockets', 'Needs connection tracking; new servers can be flooded'],
+          ['Least response time / least outstanding requests', 'Lowest latency x active requests', 'Heterogeneous latency, noisy neighbours', 'Feedback loops; measurement noise'],
+          ['Power of two choices', 'Pick 2 at random, send to the less loaded', 'Large fleets, many independent LBs', 'Needs some load signal per server'],
+          ['IP hash', 'hash(client IP) mod N', 'Simple stickiness without cookies', 'NAT clusters many users on one IP; reshuffles when N changes'],
+          ['Consistent hashing', 'hash(key) on a ring of servers', 'Cache affinity, sharded backends', 'Hot keys; needs virtual nodes'],
+        ],
+      },
+      callout: { type: 'good', md: "**Power of two choices** is a famous result: picking the less loaded of just 2 random servers reduces the maximum load from ~log n / log log n to ~log log n, nearly as good as checking every server, but with no global coordination. Envoy, NGINX (`random two`) and HAProxy all offer it." },
+    },
+    {
+      h: 'L4 vs L7 load balancing',
+      md: "**L4** balancers forward TCP/UDP connections based on the 5-tuple (protocol, source IP/port, destination IP/port) without reading the payload. Every packet of a connection goes to the same backend. They are extremely fast (millions of connections, often done in the kernel or hardware), protocol-agnostic and can preserve client IPs, but cannot route by URL or retry a failed HTTP request.\n\n**L7** balancers terminate the connection, parse HTTP/gRPC, and make a decision **per request**: route `/api/*` vs `/static/*`, `Host: a.com` vs `b.com`, canary by header, sticky by cookie. They can retry idempotent requests, add headers, compress, terminate TLS, and apply auth or rate limits. Cost: more CPU per request and more latency (sub-ms to a few ms).",
+      table: {
+        headers: ['', 'Layer 4', 'Layer 7'],
+        rows: [
+          ['Sees', 'IPs, ports, TCP/UDP', 'Full HTTP: method, path, headers, cookies, body'],
+          ['Decision unit', 'Per connection', 'Per request'],
+          ['TLS', 'Usually passthrough', 'Usually terminates'],
+          ['Features', 'Fast forwarding, static IPs, any protocol', 'Path/host routing, retries, header rewrite, WAF, caching'],
+          ['Throughput', 'Millions of conns/s per node', 'Tens to hundreds of thousands of req/s per node'],
+          ['Long-lived HTTP/2 or gRPC', 'All streams pinned to one backend (imbalance)', 'Balances each stream/request'],
+          ['Examples', 'AWS NLB, Google Maglev, LVS/IPVS, Katran', 'AWS ALB, NGINX, Envoy, HAProxy (HTTP mode), Traefik'],
+        ],
+      },
+    },
+    {
+      h: 'Health checks, stickiness and draining',
+      md: "- **Active health checks**: LB probes `GET /healthz` every 5-10 s; after N failures (e.g. 2-3) the server is ejected, after M successes it rejoins. Make the check reflect real readiness (can it reach its DB?) but not so deep that a shared dependency outage ejects *every* server at once.\n- **Passive health checks / outlier detection**: eject servers that return many 5xx or time out on real traffic (Envoy outlier detection).\n- **Sticky sessions** (cookie or IP affinity): keep a user on one server. Handy for in-memory sessions, but it creates uneven load and loses the session on failure. Prefer stateless servers with shared session storage.\n- **Connection draining**: on deploy or scale-in, stop sending *new* requests to a server but let in-flight ones finish (e.g. 30-300 s deregistration delay).\n- **Slow start**: ramp traffic gradually to new instances so cold caches and JITs are not slammed.",
+      callout: { type: 'warn', md: "The load balancer itself must not be a SPOF. Managed cloud LBs are redundant across AZs; self-hosted ones run as active-passive pairs with a floating IP (keepalived/VRRP) or as an active-active fleet behind ECMP routing or anycast." },
+    },
+    {
+      h: 'Where load balancing happens',
+      md: "- **Global (GSLB)**: DNS-based (GeoDNS, latency routing) or anycast, choosing a *region*.\n- **Edge / regional L4**: one stable IP per region spreading connections over L7 proxies.\n- **L7 reverse proxies / API gateways**: request-level routing to services.\n- **Client-side**: the client library gets a list of instances from service discovery and balances itself (gRPC, Netflix Ribbon, Finagle). No extra hop.\n- **Service mesh sidecars**: an Envoy next to each instance does L7 balancing, retries and mTLS for outbound calls.",
+    },
+  ],
+  diagram: {
+    intro: "A layered setup: DNS picks the region, an L4 balancer spreads connections, L7 proxies route by path, and health checks keep dead servers out. Use **Chaos mode** to see what each layer protects against.",
+    nodes: [
+      { id: 'users', label: 'Users', type: 'client', col: 0, row: 1.5, multi: true, desc: 'Millions of clients from many networks.' },
+      { id: 'dns', label: 'GeoDNS / Anycast', type: 'dns', col: 1, row: 0, desc: 'Global layer: returns the nearest healthy region\'s address.', tech: ['Route 53', 'Cloudflare'] },
+      { id: 'l4', label: 'L4 Load Balancer', sub: 'TCP, static IP', type: 'lb', col: 1, row: 2, desc: 'Spreads TCP connections across L7 proxies by 5-tuple hash. Very fast, no TLS or HTTP parsing.', tech: ['AWS NLB', 'Maglev', 'IPVS'] },
+      { id: 'l7', label: 'L7 Proxies', sub: 'TLS + routing', type: 'lb', col: 2, row: 1.5, multi: true, desc: 'Terminate TLS, parse HTTP, route by path, retry idempotent requests, balance with least-outstanding-requests.', tech: ['Envoy', 'NGINX', 'AWS ALB'] },
+      { id: 'web', label: 'Web Pool', sub: '/', type: 'service', col: 4, row: 0.5, multi: true, desc: 'Serves pages. Round robin is fine: requests are uniform.' },
+      { id: 'api', label: 'API Pool', sub: '/api/*', type: 'service', col: 4, row: 1.5, multi: true, desc: 'Variable-cost requests: least outstanding requests or power-of-two-choices avoids piling onto a slow instance.' },
+      { id: 'ws', label: 'Realtime Pool', sub: '/ws (WebSockets)', type: 'service', col: 4, row: 2.5, multi: true, desc: 'Long-lived connections: least connections balances open sockets.' },
+      { id: 'hc', label: 'Health Checker', type: 'monitor', col: 3, row: 3.5, desc: 'Probes `/healthz` every 5 s; 2 failures eject, 3 successes restore. Also passive outlier detection on 5xx.' },
+    ],
+    edges: [
+      { from: 'users', to: 'dns', label: 'resolve' },
+      { from: 'users', to: 'l4', label: 'TCP :443' },
+      { from: 'l4', to: 'l7' },
+      { from: 'l7', to: 'web', label: '/' },
+      { from: 'l7', to: 'api', label: '/api' },
+      { from: 'l7', to: 'ws', label: '/ws' },
+      { from: 'hc', to: 'ws', label: 'probe', async: true },
+      { from: 'hc', to: 'l7', label: 'eject/restore', async: true },
+    ],
+    flows: [
+      {
+        id: 'req', name: 'An API request through the layers',
+        steps: [
+          { from: 'users', to: 'dns', text: 'Resolve `shop.com`: GeoDNS returns the eu-west region\'s L4 address.' },
+          { from: 'users', to: 'l4', text: 'Client opens a TCP connection to the regional static IP.' },
+          { from: 'l4', to: 'l7', text: 'L4 hashes the 5-tuple and forwards the connection to one L7 proxy.' },
+          { at: 'l7', text: 'Proxy terminates TLS and reads `GET /api/cart`: matches the API route.' },
+          { at: 'l7', text: 'Power of two choices: picks 2 random API instances (4 and 9 in-flight requests) and chooses the one with 4.' },
+          { from: 'l7', to: 'api', text: 'Request forwarded over a pooled keep-alive connection.' },
+          { from: 'api', to: 'l7', text: 'Response comes back; the proxy records latency for future decisions.' },
+          { from: 'l7', to: 'users', text: 'Response returned to the user.' },
+        ],
+      },
+      {
+        id: 'eject', name: 'Health check ejects a bad instance',
+        steps: [
+          { at: 'api', text: 'One API instance runs out of DB connections and starts returning 503.' },
+          { at: 'l7', text: 'Passive outlier detection: 5 consecutive 5xx → eject for 30 s.' },
+          { from: 'hc', to: 'l7', text: 'Active checks also fail twice; the instance is marked unhealthy.' },
+          { from: 'l7', to: 'api', text: 'New requests go only to the healthy instances. Retries on idempotent GETs hide most errors.' },
+          { at: 'api', text: 'Auto-scaling replaces the instance; after 3 passing checks it gets traffic again with slow start.' },
+        ],
+      },
+    ],
+    failures: [
+      { node: 'l4', scenario: 'An L4 node fails', impact: 'Connections through it reset; clients reconnect and land on other nodes (ECMP/anycast).', mitigation: 'Redundant L4 nodes across AZs; consistent hashing (Maglev) keeps most connections on the same backend.' },
+      { node: 'l7', scenario: 'L7 proxy fleet overloaded', impact: 'Latency rises for every route, since all traffic flows through it.', mitigation: 'Auto-scale proxies, shed load with 503s early, protect with rate limits.' },
+      { node: 'api', scenario: 'One API instance is slow but not dead', impact: 'Round robin keeps sending it 1/N of traffic, so p99 latency spikes.', mitigation: 'Least-outstanding-requests or P2C, plus outlier detection and timeouts.' },
+      { node: 'hc', scenario: 'Health check depends on a shared DB that goes down', impact: 'Every instance fails its check and is ejected at once: total outage, even for requests that did not need the DB.', mitigation: 'Keep liveness checks shallow; fail open if all instances look unhealthy (panic threshold).' },
+      { node: 'ws', scenario: 'Realtime instance is restarted for deploy', impact: 'Thousands of WebSockets drop and reconnect at once, flooding the others.', mitigation: 'Connection draining, jittered reconnects, least-connections balancing.' },
+    ],
+  },
+  sims: ['load-balancer'],
+  keyPoints: [
+    'LBs enable horizontal scaling and HA: spread load, eject unhealthy servers.',
+    'L4 = connection-level by IP/port, fastest; L7 = request-level by HTTP content, smartest.',
+    'Round robin for uniform work; least connections/requests or P2C for variable work; hashing for affinity.',
+    'Health checks must be meaningful but not couple all servers to one shared dependency.',
+    'The LB tier itself must be redundant.',
+  ],
+  pitfalls: [
+    'Sticky sessions hiding a stateful app and causing hot servers.',
+    'L4-balancing long-lived HTTP/2 or gRPC connections: all requests stick to whichever backend got the connection.',
+    'Deep health checks that eject the entire fleet during a dependency blip.',
+    'No connection draining, so every deploy drops in-flight requests.',
+    'IP-hash stickiness behind carrier-grade NAT sending a whole mobile network to one server.',
+  ],
+  realWorld: [
+    '**Google Maglev** is a software L4 LB using consistent hashing so any Maglev node sends a given connection to the same backend.',
+    '**Facebook Katran** (open source) is an XDP/eBPF L4 balancer handling millions of packets per second per core.',
+    '**AWS** offers NLB (L4), ALB (L7) and Gateway LB; ALB supports least-outstanding-requests routing.',
+    '**Netflix** uses client-side load balancing with Eureka discovery; **Envoy** brought P2C and outlier detection to the mainstream.',
+  ],
+  related: ['proxy-vs-reverse-proxy', 'consistent-hashing', 'scalability', 'availability', 'api-gateway', 'service-discovery', 'stateful-vs-stateless'],
+  quiz: [
+    { q: 'You need to route `/images/*` to one pool and `/api/*` to another. Which load balancer type is required?', options: ['L3', 'L4', 'L7', 'DNS round robin'], answer: 2, explain: 'Only an L7 LB parses the HTTP request and can see the path.' },
+    { q: 'Requests vary from 5 ms to 5 s. Which algorithm best avoids piling work on a busy server?', options: ['Round robin', 'IP hash', 'Least outstanding requests / least connections', 'Weighted round robin with equal weights'], answer: 2, explain: 'Dynamic algorithms account for in-progress work; round robin blindly sends equal counts regardless of how backed up a server is.' },
+    { q: 'A gRPC service sits behind an L4 LB; one backend is overloaded while others idle. Why?', options: ['gRPC uses UDP', 'gRPC multiplexes many requests over one long-lived HTTP/2 connection, which the L4 LB pins to one backend', 'L4 LBs do not support TLS', 'Health checks are misconfigured'], answer: 1, explain: 'L4 balances connections, not requests. Use an L7 (HTTP/2-aware) proxy or client-side balancing.' },
+    { q: 'What is the main benefit of "power of two choices" over checking all servers for the least loaded one?', options: ['It is perfectly balanced', 'Near-optimal balance with very little load information and no herd behaviour when many LBs decide at once', 'It guarantees stickiness', 'It needs no health checks'], answer: 1, explain: 'Sampling two avoids every LB stampeding onto the single least-loaded server, while still giving excellent balance.' },
+  ],
+  references: [
+    { title: 'AlgoMaster: Load Balancing Algorithms Explained with Code', url: 'https://blog.algomaster.io/p/load-balancing-algorithms-explained-with-code' },
+    { title: 'Google: Maglev, A Fast and Reliable Software Network Load Balancer', url: 'https://research.google/pubs/maglev-a-fast-and-reliable-software-network-load-balancer/' },
+    { title: 'Mitzenmacher: The Power of Two Choices in Randomized Load Balancing', url: 'https://www.eecs.harvard.edu/~michaelm/postscripts/mythesis.pdf' },
+  ],
+});

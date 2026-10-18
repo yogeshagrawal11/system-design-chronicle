@@ -1,0 +1,133 @@
+SD.concept({
+  id: 'spof',
+  category: 'core',
+  order: 4,
+  icon: '🎯',
+  title: 'Single Point of Failure (SPOF)',
+  tagline: 'Any one thing whose failure takes down a critical user flow, and how to find and remove it.',
+  summary:
+    "A **single point of failure** is any component, dependency or even person whose failure alone stops a critical user journey. It is a SPOF when three things are true: a critical path depends on it, there is no working alternative, and its loss causes unacceptable impact.\n\n" +
+    "SPOFs are not only servers. Classic examples: the one load balancer, the database primary without a standby, a single NAT gateway, a DNS provider, a secrets manager every service calls at startup, the deploy pipeline you need to ship the fix, or the one engineer who knows how to restore backups. Removing them means **redundancy + independent failure domains + automatic detection and failover**, and then *testing* that it all works.",
+  analogy:
+    "A string of old Christmas lights wired in series: one bulb burns out and the whole string goes dark. Rewire it in parallel and a dead bulb only darkens itself. But if every string still plugs into the same single wall socket, the socket is now your SPOF.",
+  sections: [
+    {
+      h: 'Before: a stack full of SPOFs',
+      md: "A typical first deployment. Turn on **Chaos mode** and click each component: almost every one takes the whole product down.",
+      diagram: {
+        nodes: [
+          { id: 'users', label: 'Users', type: 'client', col: 0, row: 1, desc: 'Everyone depends on every box to the right.' },
+          { id: 'dns', label: 'DNS (one provider)', type: 'dns', col: 1, row: 0, desc: 'One DNS provider, no secondary.' },
+          { id: 'lb', label: 'Load Balancer', sub: 'single VM', type: 'lb', col: 1, row: 2, desc: 'A single NGINX VM. If it dies, nobody reaches the app servers behind it.' },
+          { id: 'app', label: 'App Server', sub: 'one instance', type: 'service', col: 2, row: 1, desc: 'One instance holding sessions in memory.' },
+          { id: 'cache', label: 'Redis', sub: 'one node', type: 'cache', col: 3, row: 0, desc: 'Single cache node absorbing 90% of reads.' },
+          { id: 'db', label: 'Database', sub: 'no standby', type: 'db', col: 3, row: 2, desc: 'One primary, nightly backups to the same disk.' },
+        ],
+        edges: [
+          { from: 'users', to: 'dns' },
+          { from: 'users', to: 'lb' },
+          { from: 'lb', to: 'app' },
+          { from: 'app', to: 'cache' },
+          { from: 'app', to: 'db' },
+        ],
+        failures: [
+          { node: 'dns', scenario: 'DNS provider outage', impact: 'Name stops resolving once cached TTLs expire: total outage for new sessions.', mitigation: 'Use two DNS providers serving the same zone, or a provider with anycast and a 100% SLA.' },
+          { node: 'lb', scenario: 'Load balancer VM crashes', impact: 'Total outage: the only entry point is gone.', mitigation: 'Redundant LB pair with a floating IP (VRRP) or a managed multi-AZ LB.' },
+          { node: 'app', scenario: 'App server crashes or is deployed', impact: 'Total outage; every logged-in session is lost.', mitigation: 'Run N+1 stateless instances, sessions in a shared store, rolling deploys.' },
+          { node: 'cache', scenario: 'Redis node dies', impact: 'Not a hard outage, but every read now hits the database, which at 10x load falls over: a hidden SPOF via cascade.', mitigation: 'Replicated cache (primary + replica, or a cluster), request coalescing, and a DB sized to survive a cold cache.' },
+          { node: 'db', scenario: 'Database disk fails', impact: 'Total outage and possible data loss; the backup lived on the same disk.', mitigation: 'Synchronous standby in another AZ with automatic failover; backups to separate storage, regularly restored.' },
+        ],
+      },
+    },
+    {
+      h: 'After: redundancy at every layer',
+      md: "The same product with each SPOF removed. Fail any single box in **Chaos mode**: users keep working. Notice the extra pieces needed to make redundancy real: health checks, replication, and something that decides who is primary.",
+      diagram: {
+        nodes: [
+          { id: 'users', label: 'Users', type: 'client', col: 0, row: 1.5, desc: 'Still one logical entry, but every hop has an alternative.' },
+          { id: 'dns', label: 'DNS', sub: '2 providers, anycast', type: 'dns', col: 1, row: 0, desc: 'Zone served by two providers; health-checked records.' },
+          { id: 'lb1', label: 'LB node A', type: 'lb', col: 1, row: 1, desc: 'Active load balancer node in AZ-a.' },
+          { id: 'lb2', label: 'LB node B', type: 'lb', col: 1, row: 2, desc: 'Active load balancer node in AZ-b. Either can carry all traffic.' },
+          { id: 'app', label: 'App fleet', sub: 'N+1, 2 AZs', type: 'service', col: 2, row: 1.5, multi: true, desc: 'Stateless instances across two AZs; any one can die.' },
+          { id: 'cache', label: 'Redis cluster', sub: 'replicated', type: 'cache', col: 3, row: 0.5, multi: true, desc: 'Shards with replicas; automatic promotion on node loss.' },
+          { id: 'dbp', label: 'DB Primary', type: 'db', col: 4, row: 1.5, desc: 'Writes go here; replicates synchronously to the standby.' },
+          { id: 'dbs', label: 'DB Standby', sub: 'other AZ', type: 'db', col: 4, row: 2.5, desc: 'Promoted automatically if the primary fails.' },
+          { id: 'backup', label: 'Backups', sub: 'separate account', type: 'storage', col: 5, row: 2.5, desc: 'Point-in-time backups in a separate account/region. Protects against deletion and corruption that replication would copy faithfully.' },
+          { id: 'mon', label: 'Health checks', type: 'monitor', col: 3, row: 2.5, desc: 'Probes everything; drives LB eviction and DB failover. Itself replicated.' },
+        ],
+        edges: [
+          { from: 'users', to: 'dns' },
+          { from: 'users', to: 'lb1' },
+          { from: 'users', to: 'lb2' },
+          { from: 'lb1', to: 'app' },
+          { from: 'lb2', to: 'app' },
+          { from: 'app', to: 'cache' },
+          { from: 'app', to: 'dbp' },
+          { from: 'dbp', to: 'dbs', label: 'sync' },
+          { from: 'dbs', to: 'backup', label: 'snapshots', async: true },
+          { from: 'mon', to: 'dbs', label: 'promote', async: true },
+        ],
+        failures: [
+          { node: 'lb1', scenario: 'LB node A fails', impact: 'Clients on A reconnect to B within seconds.', mitigation: 'Already mitigated: two active nodes; DNS/anycast health checks.' },
+          { node: 'app', scenario: 'Several app instances crash', impact: 'In-flight requests fail; capacity drops but the fleet keeps serving.', mitigation: 'Auto-scaling replaces instances; keep enough headroom to lose a full AZ.' },
+          { node: 'cache', scenario: 'A cache shard primary dies', impact: 'A replica is promoted in seconds; a short burst of misses.', mitigation: 'Replicas per shard; DB capacity planned for some miss traffic.' },
+          { node: 'dbp', scenario: 'Primary DB fails', impact: '30-60 s of failed writes during promotion; no data lost thanks to sync replication.', mitigation: 'Automatic failover, client retries with backoff.' },
+          { node: 'backup', scenario: 'Engineer drops a table by mistake', impact: 'Replication copies the drop to the standby instantly: redundancy does not help here.', mitigation: 'Point-in-time restore from isolated backups. Replication is not a backup.' },
+          { node: 'mon', scenario: 'Health checker fails', impact: 'Nothing visible until the next failure, which will not be handled automatically.', mitigation: 'Run health checking as a quorum and alert if it goes silent.' },
+        ],
+      },
+    },
+    {
+      h: 'How to find SPOFs',
+      md: "1. **List critical user journeys** (sign in, search, checkout) and draw every dependency each one touches, including DNS, certificates, secrets, feature-flag service and third-party APIs.\n2. For each box ask: *if this disappears, is slow, or returns garbage, what happens?* Slowness is often worse than death because it holds threads.\n3. Look for **shared fate**: two \"redundant\" servers in the same rack, both replicas in one AZ, every region reading config from one bucket, all services using the same expiring TLS cert.\n4. Check **recovery dependencies**, not just runtime ones: can you deploy, roll back, or log in to the console if the identity provider or CI system is down?\n5. Check **people and process**: a single on-call who knows the runbook is a SPOF.\n6. **Prove it** with controlled failure tests (game days, chaos experiments) instead of trusting the diagram.",
+    },
+    {
+      h: 'Removing (or accepting) a SPOF',
+      md: "Each fix has a cost; decide per SPOF whether to remove, mitigate, monitor, or consciously accept it.",
+      table: {
+        headers: ['SPOF', 'Typical fix', 'Trade-off'],
+        rows: [
+          ['Single app server', 'N+1 stateless instances behind an LB', 'Must externalize sessions/files'],
+          ['Single load balancer', 'Active-active pair, VRRP floating IP, or managed LB', 'Little; managed LBs are cheap'],
+          ['DB primary', 'Hot standby + automatic failover; consensus-based DB', 'Sync replication latency; split-brain risk'],
+          ['Single AZ / region', 'Multi-AZ by default; multi-region for top tier', 'Multi-region doubles cost and adds consistency problems'],
+          ['Cache node', 'Replicated cluster; protect DB from cold-cache stampede', 'More memory; failover logic'],
+          ['Third-party API (payments, SMS)', 'Second provider, or queue and retry later', 'Integration and reconciliation work'],
+          ['Single person', 'Runbooks, rotations, pairing on incidents', 'Training time'],
+        ],
+      },
+      callout: { type: 'warn', md: "Redundancy creates new failure modes: failover logic that is buggy, **split brain** where two nodes both think they are primary, and survivors that lack the capacity to absorb the load. Untested failover is just a different SPOF." },
+    },
+  ],
+  keyPoints: [
+    'A SPOF is anything on a critical path with no working alternative.',
+    'Look beyond servers: DNS, certs, secrets, CI/CD, third parties and people.',
+    'Redundancy only helps if failures are independent (different racks, AZs, deploy waves).',
+    'Replication is not backup: it faithfully copies deletes and corruption.',
+    'Failover must be automatic, monitored and regularly exercised.',
+  ],
+  pitfalls: [
+    'A redundant pair that shares one power feed, switch, or AZ.',
+    'Caches that are "optional" until they fail and the database collapses under the miss load.',
+    'Redundant app servers that all depend on one config service at startup.',
+    'Assuming a managed service has no SPOF; read its SLA and its regional scope.',
+  ],
+  realWorld: [
+    '**AWS us-east-1 outages** (2017 S3, 2021 networking) took down many companies that ran in a single region or relied on global control planes hosted there.',
+    'The **2016 Dyn DDoS** knocked out Twitter, GitHub and Netflix for users in parts of the US because they relied on a single DNS provider.',
+    '**Expired TLS certificates** have caused outages at Microsoft Teams, Spotify and others: a single forgotten renewal behaves like a SPOF.',
+    "**CrowdStrike's July 2024** faulty update hit millions of Windows machines at once: a shared software dependency defeating hardware redundancy.",
+  ],
+  related: ['availability', 'failover', 'fault-tolerance', 'load-balancing', 'data-replication', 'disaster-recovery', 'heartbeats'],
+  quiz: [
+    { q: 'You run two app servers in the same rack on the same top-of-rack switch. Is there still a SPOF?', options: ['No, there are two servers', 'Yes, the shared switch and rack power are single points of failure', 'Only if they share a database', 'Only during deploys'], answer: 1, explain: 'Redundancy must span independent failure domains. A shared switch fails both at once.' },
+    { q: 'Your DB has a synchronous standby. An engineer accidentally runs `DELETE FROM orders`. What protects you?', options: ['The standby', 'Automatic failover', 'An isolated point-in-time backup', 'Read replicas'], answer: 2, explain: 'Replication copies the delete everywhere within milliseconds. Only a backup taken before the mistake can restore the data.' },
+    { q: 'Why can a single cache node be a SPOF even though the app can fall back to the database?', options: ['Caches store the only copy of data', 'Losing it sends all reads to the DB, which may not handle the load and collapses', 'Caches hold the user sessions', 'It cannot; caches are never SPOFs'], answer: 1, explain: 'If the database was sized assuming a 90% hit rate, a 10x jump in DB reads can take it down: a cascading failure.' },
+    { q: 'Which is a *recovery* SPOF rather than a runtime one?', options: ['The load balancer', 'The only CI/CD pipeline used to deploy a fix', 'The primary database', 'The CDN'], answer: 1, explain: 'The system may run fine without CI/CD, but if it is down during an incident you cannot ship the rollback.' },
+  ],
+  references: [
+    { title: 'AlgoMaster: Single Point of Failure', url: 'https://algomaster.io/learn/system-design/single-point-of-failure-spof' },
+    { title: 'AWS Well-Architected: Reliability Pillar', url: 'https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html' },
+    { title: 'Principles of Chaos Engineering', url: 'https://principlesofchaos.org/' },
+  ],
+});

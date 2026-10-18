@@ -167,7 +167,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs/Zensical documentation
-/site
+# /site  (disabled: site/ is this project's website, not MkDocs output)
 
 # mypy
 .mypy_cache/
@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- System Design Chronicle ---
+.DS_Store
+.obsidian/
+.vscode/
+*.swp
+CLAUDE.md

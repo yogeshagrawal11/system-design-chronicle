@@ -1,0 +1,283 @@
+SD.design({
+  id: 'instagram',
+  title: 'Instagram (Photo Sharing & Feed)',
+  company: 'Instagram',
+  difficulty: 'medium',
+  order: 3,
+  featured: true,
+  icon: '📸',
+  tagline: 'Upload a photo once, show it in a few hundred million ranked feeds, and count a million likes a minute.',
+  summary:
+    'Instagram is a **media pipeline** bolted onto a **social feed**. The write path takes a 12 MP photo or a video from a phone on a shaky network, stores it durably and processes it into many sizes and formats. ' +
+    'The read path must show every user a fresh, ranked feed in ~100 ms, which means precomputing feeds with **fan-out on write** — except for celebrities with hundreds of millions of followers, who are merged in **at read time**. ' +
+    'On top sit **Stories** (content that must disappear after 24 hours) and **engagement counters** where a single post can receive millions of likes in minutes.',
+  analogy:
+    'A newspaper delivery service. When a local writer publishes, copies are dropped into each subscriber\'s mailbox straight away (fan-out on write). ' +
+    'A world-famous columnist would need 600 million copies printed at once, so instead their column sits at the depot and is slipped into your paper only when you come to collect it (fan-out on read).',
+  numbers: [
+    { value: '2B+', label: 'monthly users' },
+    { value: '100M+', label: 'photos & videos / day' },
+    { value: '~100ms', label: 'feed load target' },
+    { value: '500M+', label: 'daily Stories users' },
+  ],
+  requirements: {
+    functional: [
+      'Upload **photos and videos** (including multi-image carousels) with captions, tags and location.',
+      '**Follow / unfollow** users; profile grid of a user\'s posts.',
+      '**Home feed**: recent posts from followed accounts, ranked.',
+      '**Stories**: posts that expire after 24 hours, shown in a tray at the top, with "seen" state.',
+      '**Like and comment**; show like counts and a preview of comments.',
+      'Search users and hashtags (summary level).',
+    ],
+    nonFunctional: [
+      '**Feed latency** ~100 ms p50, < 500 ms p99; media loads progressively.',
+      '**High availability** over strong consistency: a post may take a few seconds to appear in followers\' feeds.',
+      '**Durability**: an uploaded photo must never be lost.',
+      '**Read-heavy**: ~100 feed reads per upload; billions of image fetches per day.',
+      'Works on poor mobile networks: resumable uploads, small thumbnails first.',
+    ],
+    outOfScope: ['Direct messages', 'Reels recommendations engine in depth', 'Ads ranking and delivery', 'Content moderation ML'],
+  },
+  estimation: {
+    inputs: [
+      { id: 'dau', label: 'Daily active users', value: 500e6, min: 1e6, max: 2e9, step: 1e6 },
+      { id: 'uploads', label: 'New posts per day', value: 100e6, min: 1e5, max: 1e9, step: 1e5 },
+      { id: 'mb', label: 'Stored bytes per post (all variants)', value: 3, min: 0.2, max: 50, step: 0.1, unit: 'MB' },
+      { id: 'followers', label: 'Avg followers per poster', value: 300, min: 10, max: 2000, step: 10 },
+      { id: 'views', label: 'Feed fetches per user per day', value: 20, min: 1, max: 100, step: 1 },
+      { id: 'likes', label: 'Likes per user per day', value: 10, min: 0, max: 200, step: 1 },
+    ],
+    outputs: [
+      { label: 'Upload QPS (avg)', f: (v) => v.uploads / 86400 },
+      { label: 'Media storage / day', unit: 'bytes', f: (v) => v.uploads * v.mb * 1e6 },
+      { label: 'Media storage / year (×3 replicas)', unit: 'bytes', f: (v) => v.uploads * v.mb * 1e6 * 365 * 3 },
+      { label: 'Fan-out feed inserts / sec', f: (v) => (v.uploads * v.followers) / 86400, note: 'before the celebrity cut-off removes the biggest accounts' },
+      { label: 'Feed read QPS (peak ×3)', f: (v) => ((v.dau * v.views) / 86400) * 3 },
+      { label: 'Feed cache (500 ids × 16 B per DAU)', unit: 'bytes', f: (v) => v.dau * 500 * 16 },
+      { label: 'Like writes / sec (avg)', f: (v) => (v.dau * v.likes) / 86400 },
+    ],
+    notes: 'Media is the storage monster (hundreds of TB per day), but it is immutable and CDN-served. ' +
+      'The fan-out row shows why push-only feeds break: 100M posts × 300 followers is already ~350K inserts/sec on average, and one celebrity post would add hundreds of millions on its own. ' +
+      'Feed caches store only **post ids** (not content), so even 500 entries for every DAU fits in a few TB of RAM across a cluster.',
+  },
+  api: [
+    { method: 'POST', path: '/v1/media/uploads', desc: 'Start an upload; get pre-signed, resumable upload URLs',
+      req: '{ "type": "image/jpeg", "bytes": 4200000, "sha256": "...", "parts": 1 }',
+      res: '{ "uploadId": "up_7Hq", "urls": ["https://upload.example.com/up_7Hq?part=1&sig=..."] }',
+      notes: 'The phone uploads bytes **directly to storage**; API servers never proxy media. The app begins uploading as soon as the user picks a photo, while they are still writing the caption.' },
+    { method: 'POST', path: '/v1/posts', desc: 'Publish a post referencing completed uploads',
+      req: '{ "uploadIds": ["up_7Hq"], "caption": "Sunset 🌅 #tokyo", "location": "..." }',
+      res: '201 { "postId": "2847193049128374272", "status": "processing" }',
+      notes: 'Idempotent via `Idempotency-Key`. Returns immediately; processing and fan-out happen asynchronously.' },
+    { method: 'GET', path: '/v1/feed?cursor=...&limit=20', desc: 'Ranked home feed page',
+      res: '{ "items": [ { "postId": "...", "author": {...}, "media": [{ "w": 1080, "url": "https://cdn..." }], "likeCount": 1243, "viewerHasLiked": false } ], "nextCursor": "..." }' },
+    { method: 'GET', path: '/v1/stories/tray', desc: 'Ordered list of accounts with active stories', res: '{ "tray": [ { "userId": "...", "hasUnseen": true, "latestAt": ... } ] }' },
+    { method: 'POST', path: '/v1/posts/{id}/like', desc: 'Like a post (DELETE to unlike)', res: '204', notes: 'Idempotent per (user, post): liking twice has no extra effect, which makes retries safe and protects counters.' },
+    { method: 'POST', path: '/v1/users/{id}/follow', desc: 'Follow a user', notes: 'Triggers a background backfill of the followee\'s recent posts into the follower\'s feed.' },
+  ],
+  dataModel: [
+    { name: 'posts', store: 'Sharded PostgreSQL (by author user_id)', fields: [['post_id', 'bigint PK', 'time-ordered 64-bit id with shard id embedded'], ['author_id', 'bigint', 'shard key'], ['caption', 'text', ''], ['media', 'jsonb', 'variant keys, dimensions, blurhash'], ['created_at', 'timestamp', ''], ['like_count', 'int', 'denormalised, updated in batches']],
+      why: 'A user\'s posts live on one logical shard, so profile grids are a single-shard range scan. The id itself encodes the shard, so a lookup by post id needs no directory.' },
+    { name: 'follows', store: 'Sharded PostgreSQL (two copies: by follower and by followee)', fields: [['follower_id', 'bigint', ''], ['followee_id', 'bigint', ''], ['created_at', 'timestamp', '']],
+      why: '"Who do I follow?" (feed building) and "who follows X?" (fan-out) are both hot queries, so the edge is stored twice, each sharded by the queried side.' },
+    { name: 'feed', store: 'Redis / Cassandra (by viewer user_id)', fields: [['user_id', 'bigint PK', ''], ['entries', 'sorted set (post_id, author_id, ts)', 'capped to ~500']],
+      why: 'Precomputed candidate list per user. Ids only — content is hydrated from post caches at read time so edits and deletes need no feed rewrite.' },
+    { name: 'stories', store: 'Cassandra with TTL', fields: [['author_id', 'bigint PK', ''], ['story_id', 'timeuuid CK', ''], ['media', 'map', ''], ['expires_at', 'timestamp', 'TTL 24h (archive copy kept separately)']],
+      why: 'Write-heavy, time-bounded data; native TTL deletes it without cleanup jobs. One partition per author = one read per tray entry.' },
+    { name: 'likes', store: 'Cassandra / sharded MySQL (by post_id) + Redis counters', fields: [['post_id', 'bigint PK', ''], ['user_id', 'bigint CK', 'uniqueness of a like'], ['created_at', 'timestamp', '']],
+      why: 'The edge table answers "did I like this?" and supports unlikes; the count lives separately in a counter cache because counting rows on every view would be ruinous.' },
+  ],
+  architecture: {
+    intro: 'Media bytes go straight from the phone to object storage and out through the CDN. Metadata goes through services into sharded Postgres; a change stream from the post store drives fan-out into per-user feed caches.',
+    nodes: [
+      { id: 'client', label: 'Instagram App', type: 'client', col: 0, row: 2, desc: 'Resizes/compresses media before upload, uploads in resumable chunks, renders feeds with progressive images (blurry placeholder → thumbnail → full), and prefetches media for the next posts and the first stories.' },
+      { id: 'cdn', label: 'Image/Video CDN', type: 'cdn', col: 1, row: 0, desc: 'Serves every image and video variant from the edge. Media is immutable (new edit = new key), so cache TTLs are effectively infinite.', tech: ['Meta edge (FNA)', 'CloudFront'] },
+      { id: 'gw', label: 'API Gateway / LB', type: 'gateway', col: 1, row: 2, desc: 'TLS termination, authentication, rate limiting, routing to backend services.', tech: ['Proxygen', 'Envoy'] },
+      { id: 'storage', label: 'Media Storage', sub: 'originals + variants', type: 'storage', col: 2, row: 0, desc: 'Durable blob store for originals and processed variants. Receives uploads directly from phones via pre-signed URLs.', tech: ['S3', 'Haystack / f4'] },
+      { id: 'media', label: 'Media Processing', sub: 'resize, transcode', type: 'worker', col: 3, row: 0, multi: true, desc: 'Triggered when an upload completes: validates, strips EXIF location if needed, generates sizes (150/320/640/1080 px) in modern formats, transcodes video into an ABR ladder, extracts thumbnails, runs safety classifiers.', tech: ['libvips', 'FFmpeg', 'GPU encoders'] },
+      { id: 'post', label: 'Post Service', type: 'service', col: 2, row: 1, multi: true, desc: 'Creates posts, assigns shard-aware ids, writes metadata, flips status to *published* once media processing is done. Also serves profile grids.', tech: ['Python/Django', 'C++'] },
+      { id: 'postdb', label: 'Posts & Graph DB', sub: 'sharded Postgres', type: 'db', col: 3, row: 1, desc: 'Users, posts and the follow graph on thousands of logical shards mapped onto fewer physical servers. Fronted by memcache for post objects.', tech: ['PostgreSQL', 'Memcached'] },
+      { id: 'fanout', label: 'Fan-out Workers', type: 'worker', col: 4, row: 1, multi: true, desc: 'Consume the post-created change stream. For normal authors, fetch followers in pages and insert the post id into each active follower\'s feed. Skip authors above the celebrity threshold.', tech: ['Kafka consumers', 'Celery'] },
+      { id: 'feed', label: 'Feed Service', sub: 'merge + rank', type: 'service', col: 2, row: 2, multi: true, desc: 'Reads the precomputed feed, merges in recent posts from followed celebrities, hydrates post objects, scores candidates with a ranking model, and paginates.', tech: ['Python', 'ML ranking service'] },
+      { id: 'feedcache', label: 'Feed Cache', sub: 'post ids per user', type: 'cache', col: 3, row: 2, desc: 'A capped sorted list of candidate post ids for every active user. Rebuilt from the database if lost.', tech: ['Redis', 'Cassandra'] },
+      { id: 'story', label: 'Stories Service', type: 'service', col: 2, row: 3, desc: 'Publishes stories, builds the ranked tray (who you interact with most first), tracks per-viewer seen state, and serves the 24-hour window.' },
+      { id: 'storydb', label: 'Story Store', sub: 'TTL 24h', type: 'db', col: 3, row: 3, desc: 'Story metadata with native TTL, plus a compact seen-state store per viewer.', tech: ['Cassandra', 'Redis'] },
+      { id: 'engage', label: 'Engagement Service', sub: 'likes, comments', type: 'service', col: 2, row: 4, multi: true, desc: 'Records likes and comments idempotently, updates counters, and emits events for notifications and ranking signals.' },
+      { id: 'counters', label: 'Counter Store', sub: 'likes, views', type: 'cache', col: 3, row: 4, desc: 'Sharded in-memory counters for hot posts with periodic write-behind into durable storage. Displays approximate values (1.2M) for huge counts.', tech: ['Redis', 'Cassandra counters'] },
+    ],
+    edges: [
+      { from: 'client', to: 'cdn', label: 'GET media' },
+      { from: 'client', to: 'storage', label: 'direct upload' },
+      { from: 'cdn', to: 'storage', label: 'origin' },
+      { from: 'client', to: 'gw', label: 'API' },
+      { from: 'storage', to: 'media', label: 'upload done', async: true },
+      { from: 'media', to: 'post', label: 'ready', async: true },
+      { from: 'gw', to: 'post' },
+      { from: 'gw', to: 'feed' },
+      { from: 'gw', to: 'story' },
+      { from: 'gw', to: 'engage' },
+      { from: 'post', to: 'postdb' },
+      { from: 'postdb', to: 'fanout', label: 'CDC stream', async: true },
+      { from: 'fanout', to: 'feedcache', label: 'push ids' },
+      { from: 'feed', to: 'feedcache', label: 'read' },
+      { from: 'feed', to: 'postdb', label: 'hydrate / celebs' },
+      { from: 'story', to: 'storydb' },
+      { from: 'engage', to: 'counters', label: 'incr' },
+    ],
+  },
+  flows: [
+    {
+      id: 'upload', name: 'Upload and publish a photo',
+      steps: [
+        { at: 'client', text: 'User picks a photo. The app downscales to ≤1080 px, compresses, and **starts uploading immediately** while the user writes a caption.' },
+        { from: 'client', to: 'gw', text: '`POST /media/uploads` → receives a pre-signed, resumable upload URL.' },
+        { from: 'client', to: 'storage', text: 'Bytes go straight to media storage in chunks; a dropped connection resumes from the last chunk.' },
+        { from: 'storage', to: 'media', text: '"Upload complete" event triggers processing: size variants, modern formats, blur placeholder, safety checks.' },
+        { from: 'media', to: 'storage', text: 'Write variants under immutable keys like `p/2847.../640.webp`.' },
+        { from: 'client', to: 'gw', text: 'User taps Share → `POST /posts { uploadIds, caption }`.' },
+        { from: 'gw', to: 'post', text: 'Post Service generates a 64-bit id (timestamp + shard + sequence) and validates ownership of the upload.' },
+        { from: 'post', to: 'postdb', text: 'Insert the post on the author\'s shard. Status becomes *published* once the media service signals ready.' },
+        { from: 'post', to: 'client', text: 'Return 201. The app shows the post on the user\'s own profile instantly (optimistic UI).' },
+      ],
+    },
+    {
+      id: 'fanout', name: 'Fan-out to followers (normal account)',
+      steps: [
+        { from: 'postdb', to: 'fanout', text: 'The new post row appears on the change stream (CDC / outbox), so fan-out happens only for committed posts.' },
+        { at: 'fanout', text: 'Author has 850 followers — well below the celebrity threshold (~100K–1M), so push it.' },
+        { from: 'fanout', to: 'postdb', text: 'Page through the "followers of X" index. Skip followers inactive for 30+ days (they will get a rebuilt feed if they return).' },
+        { from: 'fanout', to: 'feedcache', text: 'Pipeline `ZADD feed:{follower} ts postId` in batches; trim each list to ~500 entries.' },
+        { at: 'feedcache', text: 'Within seconds, the post is a candidate in every active follower\'s feed.' },
+      ],
+    },
+    {
+      id: 'readfeed', name: 'Open the app: load the home feed',
+      steps: [
+        { from: 'client', to: 'gw', text: '`GET /feed` on app open (often prefetched in the background).' },
+        { from: 'gw', to: 'feed', text: 'Routed to the Feed Service.' },
+        { from: 'feed', to: 'feedcache', text: 'Read ~500 candidate post ids pushed by fan-out.' },
+        { from: 'feed', to: 'postdb', text: 'Pull recent posts from the ~20 celebrities this user follows (served from a hot cache), and multi-get post objects from memcache.' },
+        { at: 'feed', text: 'Merge, drop already-seen posts, then **rank**: predicted probability of like / comment / save / long view, plus diversity rules (not 5 posts in a row from one account).' },
+        { from: 'feed', to: 'client', text: 'Return the first 10–20 items with CDN URLs for the right image size for this screen.' },
+        { from: 'client', to: 'cdn', text: 'Fetch blur placeholders instantly, then images; prefetch the next few posts\' media.' },
+      ],
+    },
+    {
+      id: 'stories', name: 'View the Stories tray',
+      steps: [
+        { from: 'client', to: 'gw', text: 'Feed screen also calls `GET /stories/tray`.' },
+        { from: 'gw', to: 'story', text: 'Stories Service gets the list of followed accounts with stories in the last 24 h.' },
+        { from: 'story', to: 'storydb', text: 'Read latest story timestamps per followee and the viewer\'s seen-state.' },
+        { at: 'story', text: 'Order the tray: unseen first, then by closeness (DMs, likes, profile visits).' },
+        { from: 'client', to: 'cdn', text: 'App prefetches the first frames of the first few unseen stories so tapping one plays instantly.' },
+        { at: 'storydb', text: 'After 24 hours the TTL expires the story; it vanishes from trays automatically.' },
+      ],
+    },
+    {
+      id: 'like', name: 'Like a viral post',
+      steps: [
+        { from: 'client', to: 'gw', text: 'User double-taps; the heart animates instantly (optimistic).' },
+        { from: 'gw', to: 'engage', text: '`POST /posts/123/like` reaches the Engagement Service.' },
+        { at: 'engage', text: 'Insert the `(post, user)` like edge if absent — a duplicate tap is a no-op, so counts never double.' },
+        { from: 'engage', to: 'counters', text: 'Increment a **sharded counter**: `likes:123:{rand 0..63}` so a viral post spreads writes across many keys.' },
+        { at: 'counters', text: 'Every few seconds, shards are summed and the total is written behind to the post row and cache.' },
+        { from: 'engage', to: 'gw', text: 'Return 204. Other viewers see "1.2M likes" — slightly stale, never wrong by more than a few seconds.' },
+      ],
+    },
+  ],
+  deepDives: [
+    {
+      title: '⬆️ Upload pipeline: getting bytes in reliably and fast',
+      md: 'Phones are on flaky networks, photos are megabytes, and users expect the post to appear the moment they tap Share.',
+      options: [
+        { name: 'Upload through the API servers', pros: ['Simple auth and validation in one place'], cons: ['API fleet now carries hundreds of TB/day of bytes', 'Slow uploads tie up app server threads', 'Hard to resume'] },
+        { name: 'Pre-signed direct upload to storage + async processing', desc: 'API issues a short-lived signed URL; phone uploads directly; a storage event triggers processing.', pros: ['API tier stays small and fast', 'Resumable, parallel chunked uploads', 'Processing scales independently on its own worker fleet'], cons: ['Two-step protocol (upload, then publish)', 'Must garbage-collect uploads that are never published'], chosen: true },
+        { name: 'Dedicated upload edge service', desc: 'Upload to a nearby edge POP that forwards over the backbone.', pros: ['Lowest latency far from data centres'], cons: ['More infrastructure to run'] },
+      ],
+      verdict: 'Pre-signed direct upload, started **speculatively** as soon as the user selects media — by the time they finish the caption, the upload is usually done, so "Share" feels instant. ' +
+        'Processing is async: generate a size ladder so phones download only what their screen needs (a 1080 px image is ~5× the bytes of a 640 px one), and video gets an adaptive-bitrate ladder. Originals are kept for re-processing when better codecs arrive.',
+    },
+    {
+      title: '📰 Feed generation: push, pull or hybrid',
+      md: 'Two extremes, and why neither works alone at Instagram scale:',
+      options: [
+        { name: 'Fan-out on write (push)', desc: 'On publish, insert the post id into every follower\'s feed list.', pros: ['Feed read is one cache read → very fast', 'Read work happens once, ahead of time'], cons: ['A 600M-follower account would need 600M writes per post', 'Wasted writes for followers who never open the app'] },
+        { name: 'Fan-out on read (pull)', desc: 'At read time, fetch recent posts of everyone you follow and merge.', pros: ['Writes are trivial', 'Always fresh'], cons: ['Following 1,000 accounts = 1,000 lookups per feed load', 'Read latency and load explode at 100:1 read/write'] },
+        { name: 'Hybrid', desc: 'Push for normal authors; pull for celebrities (above a follower threshold) and merge at read time.', pros: ['Bounded write amplification', 'Fast reads: one cached list + ~10–50 celebrity lookups that are themselves hot in cache'], cons: ['Two code paths', 'Threshold tuning and accounts crossing it'], chosen: true },
+      ],
+      verdict: 'Hybrid. Also skip pushing to **inactive** users and rebuild their feed on return. Since 2016 Instagram ranks the feed instead of showing it chronologically, so the cached list is really a **candidate pool**; a ranking model picks the order. See [Twitter](#/design/twitter) for a deeper treatment of the celebrity problem.',
+    },
+    {
+      title: '⏳ Stories: content with a 24-hour lifespan',
+      md: 'Stories look like posts but behave differently:\n\n' +
+        '- **Expiry is a hard requirement.** Use storage with native TTL (Cassandra TTL, Redis EXPIRE, S3 lifecycle rules for media) rather than a nightly delete job that could fall behind. Keep a separate private archive for the author.\n' +
+        '- **Pull, not push.** The tray only needs "which of my followees have an active story and have I seen it?". The set of followees is known; each has a small partition of current stories. A per-author "latest story time" key makes the tray build a fast multi-get, and celebrities need no special case.\n' +
+        '- **Seen state** is per (viewer, author) — store the latest seen story timestamp, not every view, to keep it compact.\n' +
+        '- **Instant playback** is the product: the client prefetches the first few seconds of the first unseen stories as soon as the tray loads.\n' +
+        '- **Viewer lists** ("who saw my story") are a write-heavy append per view, stored by author+story with the same TTL.',
+    },
+    {
+      title: '❤️ Like counters for viral posts',
+      md: 'A single post can collect millions of likes in minutes. Naively running `UPDATE posts SET like_count = like_count + 1` makes every like contend on **one row lock**, and `SELECT COUNT(*)` on every view is far worse.',
+      options: [
+        { name: 'Count rows on read', pros: ['Always exact'], cons: ['O(likes) per view — impossible for a 10M-like post'] },
+        { name: 'Single counter column', pros: ['Simple, exact'], cons: ['Hot-row contention; writes serialize on one lock'] },
+        { name: 'Sharded counters + write-behind', desc: 'Spread increments over N sub-keys in Redis; periodically sum and persist the total.', pros: ['Write throughput scales with N', 'Reads are one cached number'], cons: ['Displayed count lags by seconds', 'Must reconcile with the likes edge table occasionally'], chosen: true },
+      ],
+      verdict: 'Keep the **like edge** as the source of truth (it enforces one like per user and supports unlike), and keep the **count** as a separate, eventually consistent, sharded counter. Users cannot tell 1,203,441 from 1,203,512 — showing "1.2M" is a product decision that makes the engineering easy. Instagram engineers have written about denormalising counts after a celebrity post overloaded the database with count queries.',
+    },
+    {
+      title: '🆔 IDs and sharding',
+      md: 'Instagram shards Postgres into thousands of **logical shards** (schemas) mapped onto a smaller number of physical servers; moving a logical shard is how capacity is rebalanced. Data is sharded by **user id**, so a user\'s posts and follow lists sit together.\n\n' +
+        'Post ids are 64-bit: `41 bits ms timestamp | 13 bits logical shard | 10 bits per-shard sequence`, generated inside the database. Benefits: ids sort by time (great for feeds and cursors), the shard is recoverable from the id (no lookup service), and no central id server is needed. Read the full story in [Instagram ID sharding](#/company/instagram-id-sharding).',
+    },
+  ],
+  scaling: [
+    { stage: '🌱 Launch (2010)', md: 'A few Django servers, one PostgreSQL primary with a replica, photos on S3, Redis for feeds, memcache. Instagram famously reached ~14M users with three engineers on a stack like this.' },
+    { stage: '🌿 10M users', md: 'Shard Postgres by user into logical shards; move media behind a CDN; async workers (Celery/queues) for fan-out and processing; memcache for post objects.' },
+    { stage: '🌳 100M users', md: 'Hybrid fan-out with celebrity pull; skip inactive users; feed and inbox data move to Cassandra for write-heavy workloads; multiple data centres.' },
+    { stage: '🌍 2B users', md: 'Ranked feeds with large ML models; Stories and Reels each with their own pipelines; media on Meta storage and edge infrastructure; aggressive client prefetch and modern image codecs to cut bytes per view.' },
+  ],
+  tradeoffs: [
+    { decision: 'Feed fan-out', chosen: 'Hybrid (push normal, pull celebrities)', alternative: 'Pure push or pure pull', why: 'Caps write amplification while keeping feed reads to one cache read plus a handful of hot lookups.' },
+    { decision: 'Media upload', chosen: 'Pre-signed direct-to-storage, speculative start', alternative: 'Proxy through API servers', why: 'Keeps bytes off the app tier and makes publishing feel instant.' },
+    { decision: 'Feed cache content', chosen: 'Post ids only', alternative: 'Full post objects', why: '10–50× smaller and edits/deletes need no feed rewrite; hydration is a cheap multi-get.' },
+    { decision: 'Like counts', chosen: 'Eventually consistent sharded counters', alternative: 'Exact transactional counter', why: 'Viral posts would serialize on one row; nobody notices a few seconds of lag.' },
+    { decision: 'Story expiry', chosen: 'Native TTL in storage', alternative: 'Periodic delete job', why: 'Expiry is a promise to users; TTL cannot fall behind or forget.' },
+    { decision: 'Consistency of feeds', chosen: 'Eventual (seconds)', alternative: 'Strong', why: 'Nobody can tell if a friend\'s post appears 3 s late; availability matters more.' },
+  ],
+  failures: [
+    { node: 'feedcache', scenario: 'Feed cache cluster loses a shard', impact: 'Affected users get empty or stale feeds; rebuilding all at once would hammer the database.', mitigation: 'Rebuild lazily on read (pull recent posts from followees, rank, re-cache) with request coalescing and rate limits; replicas with failover; serve the client\'s cached feed meanwhile.' },
+    { node: 'fanout', scenario: 'Fan-out workers fall behind', impact: 'New posts appear late in followers\' feeds.', mitigation: 'Autoscale consumers on lag; prioritise active followers first; the feed service can pull very recent posts from close friends to paper over lag.' },
+    { node: 'media', scenario: 'Media processing backlog (e.g. huge New Year video spike)', impact: 'Posts stuck in *processing*.', mitigation: 'Publish with a lower-quality variant first and upgrade later; separate queues for photos (fast) and videos (slow); GPU encoder autoscaling.' },
+    { node: 'postdb', scenario: 'A Postgres shard primary fails', impact: 'Users on that shard cannot post; their profiles may be read-only.', mitigation: 'Automated failover to a synchronous replica; memcache keeps serving post objects; logical shards make it quick to move load.' },
+    { node: 'counters', scenario: 'Counter cache node lost before write-behind', impact: 'A few seconds of like increments disappear from the displayed count.', mitigation: 'The like edges are durable; a periodic reconciliation job recounts from the edge table for posts whose counter looks off.' },
+    { node: 'cdn', scenario: 'CDN edge outage', impact: 'Images fail to load in a region even though the API works.', mitigation: 'Multi-CDN / multiple edge tiers; client retries alternate hostnames; low-res placeholders still render.' },
+  ],
+  interviewTips: [
+    'Split the problem in two out loud: the media path (bytes) and the metadata/feed path (ids). They scale differently.',
+    'Always give the fan-out math before choosing hybrid — it makes the decision obvious.',
+    'Store ids in the feed cache, not post bodies; explain hydration.',
+    'Mention speculative upload — it is a real Instagram trick and a great example of designing for perceived latency.',
+    'For counters, separate the source of truth (like edges) from the display value (approximate count).',
+  ],
+  realWorld: [
+    'Instagram ran on Django + PostgreSQL from the start and still does at enormous scale, with thousands of logical shards.',
+    'Its 64-bit id scheme (timestamp + logical shard + sequence) generated in PL/pgSQL is a widely copied pattern.',
+    'Instagram switched from a chronological to a ranked feed in 2016; Stories launched the same year and passed 500M daily users by 2019.',
+    'Media is served by Meta\'s storage and CDN stack (Haystack and its successors), which is optimised for billions of small immutable objects.',
+  ],
+  concepts: ['push-vs-pull', 'cdn', 'database-sharding', 'unique-id-generation', 'caching-strategies', 'distributed-caching', 'change-data-capture', 'message-queues', 'strong-vs-eventual-consistency', 'idempotency'],
+  quiz: [
+    { q: 'Why does the feed cache store post ids rather than full post objects?', options: ['Redis cannot store JSON', 'Smaller memory footprint, and edits/deletes do not require rewriting millions of feeds', 'Ids load faster on the phone', 'Post objects change every second'], answer: 1, explain: 'A post can be in millions of feeds. Storing ids means one canonical copy of the content, hydrated cheaply from a post cache.' },
+    { q: 'A celebrity with 300M followers posts. What does the hybrid design do?', options: ['Inserts the post into 300M feeds', 'Skips fan-out; followers\' feed requests pull the celebrity\'s recent posts and merge them in', 'Sends a push notification instead', 'Delays the post for an hour'], answer: 1, explain: 'Above the threshold, fan-out on write is replaced by fan-out on read for that author. The celebrity\'s posts are hot in cache anyway.' },
+    { q: 'Why upload media directly to storage with a pre-signed URL?', options: ['It is more secure than HTTPS', 'It keeps hundreds of TB/day off the API servers and allows resumable uploads', 'Storage is closer to the phone', 'It avoids image processing'], answer: 1, explain: 'The API only authorises; storage handles bytes at scale. App servers stay small and responsive.' },
+    { q: 'What is the best way to make Stories reliably disappear after 24 hours?', options: ['A cron job that deletes old rows nightly', 'Native TTL on the stored rows and lifecycle rules on media', 'Ask clients to hide old stories', 'Delete on next view'], answer: 1, explain: 'TTL is enforced by the storage engine and cannot fall behind; a nightly job would show stories up to a day late.' },
+    { q: 'A viral post gets 50K likes per second. Why do sharded counters help?', options: ['They give exact counts', 'They spread increments across many keys so no single row or key becomes the bottleneck', 'They cache the post image', 'They prevent duplicate likes'], answer: 1, explain: 'Writes to one key serialize. Splitting into N sub-counters multiplies throughput; reads sum the shards (or a periodically materialised total).' },
+  ],
+  references: [
+    { title: 'AlgoMaster — Design Instagram', url: 'https://algomaster.io/learn/system-design-interviews/design-instagram' },
+    { title: 'Instagram Engineering — Sharding & IDs at Instagram', url: 'https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c' },
+    { title: 'Instagram Engineering blog', url: 'https://instagram-engineering.com/' },
+  ],
+});
