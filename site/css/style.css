@@ -523,6 +523,9 @@ svg .packet:not([fill="var(--bad)"]) { fill: var(--accent); }
 .tags a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 .empty { text-align: center; padding: 50px; color: var(--muted); font-family: var(--mono); }
 footer { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; color: var(--muted); font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; padding: 22px 28px 34px; border-top: 1px solid var(--border); }
+.site-disclaimer { position: relative; z-index: 1; max-width: 980px; margin: 36px auto 0; padding: 18px 28px 4px; color: var(--muted); font-family: var(--sans); font-size: .78rem; line-height: 1.6; border-top: 1px solid var(--border); }
+.site-disclaimer p { margin: 0 0 10px; }
+.site-disclaimer strong { color: var(--text); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
