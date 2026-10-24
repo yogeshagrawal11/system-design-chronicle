@@ -50,6 +50,14 @@
     });
     document.querySelector('.nav').classList.remove('open');
     window.scrollTo(0, 0);
+    // GA4: report each hash route as its own page view (SPA virtual pageview).
+    if (typeof gtag === 'function') {
+      gtag('event', 'page_view', {
+        page_title: document.title,
+        page_location: location.href,
+        page_path: location.pathname + location.search + hash,
+      });
+    }
   }
   window.addEventListener('hashchange', render);
 
