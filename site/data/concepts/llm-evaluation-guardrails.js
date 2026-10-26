@@ -113,6 +113,26 @@ SD.concept({
       },
     },
     {
+      h: 'Offline vs. online evaluation',
+      md: "Evaluation happens in two settings that answer different questions, and you need both.\n\n" +
+        "**Offline evaluation** runs *before* release against a fixed, labelled **golden set** in a controlled environment. It is repeatable and cheap, so it gates every change (prompt, model, retriever, chunking, quantization) in CI: run the candidate, score with code checks + LLM judge + occasional human review, block the release if a tracked metric regresses. Its blind spot is representativeness — it only tests the inputs you thought to include, so good offline scores do not guarantee production quality.\n\n" +
+        "**Online evaluation** runs *after* release against **real traffic**. It measures what users actually do — feedback, regenerations, task completion, escalations — plus continuous **sampled judging** of live traces, usually behind an A/B test or canary. It is the only way to catch what offline sets miss: unanticipated questions, distribution shift, and silent provider model updates. Its cost is latency (signals take days, feedback is sparse and noisy) and risk (real users see the change).\n\n" +
+        "They form a loop: offline evals gate releases → online signals reveal real failures → those failures become new golden-set cases → the next offline run catches them. Neither replaces the other — offline is fast and safe but narrow; online is real but slow and risky.",
+      table: {
+        headers: ['', 'Offline evaluation', 'Online evaluation'],
+        rows: [
+          ['When', 'Before release / in CI', 'After release, on live traffic'],
+          ['Data', 'Fixed, labelled golden set', 'Real user requests (no labels)'],
+          ['Measures', 'Correctness, faithfulness, recall@k, safety vs. known answers', 'Feedback, regenerations, task completion, escalations, sampled judge scores'],
+          ['Speed & cost', 'Fast, cheap, repeatable — run on every change', 'Slow (days), noisy; needs traffic'],
+          ['Strength', 'Controlled, reproducible, gates regressions', 'Reflects real behaviour and distribution'],
+          ['Blind spot', 'Only tests inputs you anticipated', 'Confounded, sparse, risk to real users'],
+          ['Typical use', 'CI gate, A/B pre-check, regression suite', 'Canary / A/B rollout, drift and incident detection'],
+        ],
+      },
+      callout: { type: '', md: 'The loop closes when every online failure becomes a new offline golden-set case — so the next release is gated against the bug that just happened.' },
+    },
+    {
       h: 'Offline evaluation: golden sets and LLM-as-judge',
       md: "A **golden set** is a versioned collection of inputs with expected answers or grading notes. Good ones are small enough to run on every change (a few hundred to a few thousand cases), **stratified** by intent and difficulty, and grow every time production reveals a new failure. Include adversarial and \"should refuse\" cases so you catch over-refusal as well as harm.\n\n" +
         "Score in layers, cheapest first:\n\n" +
@@ -121,6 +141,21 @@ SD.concept({
         "3. **Human review** — experts label a sample; this is the ground truth that calibrates the judge.\n\n" +
         "LLM judges have known biases: they favour the **first position** in pairwise prompts, **longer** and more confident answers, and sometimes outputs from their **own model family**. Counter them by swapping answer order and averaging, asking for a binary or 3-point verdict with a short reason (more reliable than 1–10 scores), giving the judge the reference answer or source passages, and measuring judge–human agreement before trusting it. Because generation is stochastic, run each case more than once or use enough cases that a 1–2 point change is statistically meaningful.",
       callout: { type: 'good', md: 'Treat evals like unit tests in CI: every prompt, model, retriever or quantization change runs the golden set, and the release is blocked if a tracked metric regresses beyond an agreed threshold.' },
+    },
+    {
+      h: 'Evaluation tooling: no single tool does everything',
+      md: "You rarely build eval scoring from scratch — several frameworks package the metrics, judges and tracing. They do *not* solve the same problem, so pick by what you are trying to measure rather than standardizing on one.\n\n" +
+        "A common progression: start with **RAGAS** for core RAG metrics, add **TruLens** or **LangSmith** to observe and debug multi-step traces, use **DeepEval** to run evals as CI test cases, and layer **custom in-house metrics** once generic ones stop capturing what *your* product means by \"good\" — strict numeric accuracy for finance, citation correctness for legal, policy compliance for support. The one non-negotiable for any RAG tool: score **retrieval and generation separately**.",
+      table: {
+        headers: ['Tool', 'Primary focus', 'Strengths', 'Reach for it when'],
+        rows: [
+          ['RAGAS', 'RAG-specific metrics', 'Context precision/recall + faithfulness/answer relevancy; little hand-labeling needed', 'You want structured, per-stage RAG scores to start'],
+          ['TruLens', 'LLM app evaluation & observability', 'Feedback functions on each component; inspect why an app behaved as it did', 'Debugging which part of a chain hurt quality'],
+          ['LangSmith', 'Tracing, experiments, monitoring', 'End-to-end traces across rewrite → retrieve → rerank → generate; dataset experiments', 'A multi-stage pipeline where you must find *where* it failed'],
+          ['DeepEval', 'Eval-as-testing framework', 'Pytest-style assertions; fits CI and regression gates', 'You want evals to behave like software tests in a pipeline'],
+          ['Custom / in-house', 'Domain-specific success', 'Encodes your definition of correct (numbers, citations, policy)', 'Generic metrics miss what production actually requires'],
+        ],
+      },
     },
     {
       h: 'Online metrics and hallucination',
@@ -209,7 +244,7 @@ SD.concept({
   realWorld: [
     '**Bedrock Guardrails**, **Azure AI Content Safety** and **NeMo Guardrails** package input/output filters, PII redaction and grounding checks as configurable services.',
     '**Llama Guard** and provider moderation endpoints are widely used as fast safety classifiers on prompts and responses.',
-    'Eval and tracing platforms such as **Langfuse**, **LangSmith**, **Braintrust** and **Arize Phoenix** store traces, run LLM judges and gate CI on golden sets.',
+    'Eval and tracing platforms such as **Langfuse**, **LangSmith**, **Braintrust**, **TruLens** and **Arize Phoenix** store traces, run LLM judges and gate CI on golden sets; **DeepEval** packages evals as pytest-style test cases.',
     'Open-source evaluation frameworks such as **RAGAS** popularized separate metrics for retrieval (context precision/recall) and generation (faithfulness, answer relevance).',
     'The **OWASP Top 10 for LLM Applications** lists prompt injection as its first risk.',
   ],
