@@ -78,12 +78,12 @@ Required: `id, title, year, authors, icon, tagline, summary, problem, quiz (≥3
 - core: scalability, availability, reliability, spof, latency-throughput-bandwidth, consistent-hashing, cap-theorem, failover, fault-tolerance, back-of-envelope-estimation, unique-id-generation
 - networking: osi-model, ip-addresses, dns, proxy-vs-reverse-proxy, http-https, tcp-vs-udp, load-balancing, checksums
 - api: apis, api-gateway, rest-vs-graphql, websockets, webhooks, idempotency, rate-limiting, api-design, authentication-authorization
-- database: acid-transactions, sql-vs-nosql, database-indexes, database-sharding, data-replication, database-scaling, database-types, bloom-filters, database-architectures, storage-engines, spatial-indexing
+- database: acid-transactions, sql-vs-nosql, database-indexes, database-sharding, data-replication, database-scaling, database-types, bloom-filters, roaring-bitmaps, database-architectures, storage-engines, spatial-indexing
 - caching: caching-101, caching-strategies, cache-eviction-policies, distributed-caching, cdn
 - async: pub-sub, message-queues, change-data-capture
 - distributed: heartbeats, service-discovery, consensus-algorithms, distributed-locking, gossip-protocol, circuit-breaker, disaster-recovery, distributed-tracing, observability, saga-pattern
 - patterns: client-server, microservices, serverless, event-driven-architecture, peer-to-peer, cqrs-event-sourcing
-- genai: llm-fundamentals, embeddings-vector-search, llm-inference-optimization, llm-evaluation-guardrails, ai-agents-tool-use
+- genai: llm-fundamentals, embeddings-vector-search, rag-fundamentals, rag-evaluation, llm-inference-optimization, llm-evaluation-guardrails, ai-agents-tool-use
 - tradeoffs: top-tradeoffs, vertical-vs-horizontal-scaling, concurrency-vs-parallelism, long-polling-vs-websockets, batch-vs-stream-processing, stateful-vs-stateless, strong-vs-eventual-consistency, read-through-vs-write-through, push-vs-pull, rest-vs-rpc, sync-vs-async-communication
 
 **Designs** — easy: url-shortener, search-autocomplete, load-balancer, cdn-design, parking-garage, vending-machine, key-value-store, distributed-cache, authentication-system, upi-payments · medium: whatsapp, spotify, instagram, notification-service, job-scheduler, tinder, facebook-newsfeed, twitter, reddit, netflix, youtube, google-search, amazon-ecommerce, tiktok, shopify, airbnb, rate-limiter, kafka-message-queue, flight-booking, online-code-editor, metrics-logging-platform, payment-system, digital-wallet · hard: yelp-proximity, uber, doordash, google-docs, google-maps, zoom, dropbox, bookmyshow, web-crawler, code-deployment, s3-object-storage, distributed-lock-service · new: product-catalog (medium), stream-analytics (hard), multi-region-infra (hard) · GenAI track (set `track: 'genai'`): llm-chat-app (medium), conversational-assistant (medium), rag-system (medium), ai-agent-platform (hard), realtime-voice-agent (hard), ai-image-generation (medium), model-serving-gateway (hard)
@@ -92,7 +92,7 @@ Required: `id, title, year, authors, icon, tagline, summary, problem, quiz (≥3
 
 **Papers**: paper-paxos, paper-mapreduce, paper-gfs, paper-dynamo, paper-kafka, paper-spanner, paper-bigtable, paper-zookeeper, paper-lsm-tree, paper-chubby
 
-**Simulators**: consistent-hashing, rate-limiter, cache-eviction, load-balancer, cap-theorem, sharding, bloom-filter, quorum-replication, circuit-breaker, estimator, raft-election, gossip, queue-vs-pubsub, tcp-vs-udp, caching-patterns, idempotency
+**Simulators**: consistent-hashing, rate-limiter, cache-eviction, load-balancer, cap-theorem, sharding, bloom-filter, quorum-replication, circuit-breaker, estimator, raft-election, gossip, queue-vs-pubsub, tcp-vs-udp, caching-patterns, idempotency, rag-pipeline, rag-eval-metrics, roaring-bitmap
 
 
 ## Claude Certified Architect (CCA) track

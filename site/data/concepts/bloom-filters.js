@@ -120,7 +120,7 @@ SD.concept({
     '**Google Bigtable** (2006 paper) introduced Bloom filters per SSTable to cut disk seeks for absent rows.',
     '**Redis** offers Bloom and Cuckoo filters via RedisBloom (`BF.ADD`, `BF.EXISTS`).',
   ],
-  related: ['storage-engines', 'database-indexes', 'caching-101', 'consistent-hashing'],
+  related: ['roaring-bitmaps', 'storage-engines', 'database-indexes', 'caching-101', 'consistent-hashing'],
   quiz: [
     { q: 'A Bloom filter says an item is "not present". How confident can you be?', options: ['About 99%', 'Certain — Bloom filters have no false negatives', 'It depends on k', '50%'], answer: 1, explain: 'If the item had been added, all its k bits would be 1. A 0 bit proves it was never added.' },
     { q: 'Roughly how much memory for 1 billion items at a 1% false-positive rate?', options: ['~12 MB', '~1.2 GB', '~120 GB', '~12 GB'], answer: 1, explain: '≈9.6 bits/item × 10⁹ items ≈ 9.6 Gbit ≈ 1.2 GB.' },

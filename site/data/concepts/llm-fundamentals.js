@@ -193,7 +193,7 @@ SD.concept({
     'Inference servers such as **vLLM** and **TensorRT-LLM** report TTFT and inter-token latency as their headline SLO metrics.',
     'Constrained decoding libraries (e.g. Outlines, XGrammar, llama.cpp grammars) and provider \"structured output\" modes guarantee schema-valid JSON.',
   ],
-  related: ['llm-inference-optimization', 'retrieval-augmented-generation', 'embeddings-vector-search', 'llm-evaluation-guardrails', 'ai-agents-tool-use', 'rate-limiting', 'latency-throughput-bandwidth', 'back-of-envelope-estimation', 'caching-strategies'],
+  related: ['llm-inference-optimization', 'embeddings-vector-search', 'rag-fundamentals', 'llm-evaluation-guardrails', 'ai-agents-tool-use', 'rate-limiting', 'latency-throughput-bandwidth', 'back-of-envelope-estimation', 'caching-strategies'],
   quiz: [
     { q: 'A request has a 4,000-token prompt and produces 800 output tokens. TTFT is 600 ms and TPOT is 30 ms. Roughly how long until the last token arrives?', options: ['About 0.6 s', 'About 3 s', 'About 24.6 s', 'About 120 s'], answer: 2, explain: '0.6 s + ~799 × 0.03 s ≈ 24.6 s. The decode phase (output length × per-token time) dominates, not the prompt.' },
     { q: 'Why is the decode phase usually memory-bandwidth-bound rather than compute-bound?', options: ['Because the tokenizer runs on the CPU', 'Because each step generates only one token per sequence yet must read all model weights and the KV cache from GPU memory', 'Because sampling is slow', 'Because the context window is full'], answer: 1, explain: 'Each decode step does little arithmetic per byte loaded. Batching many sequences together amortizes the weight reads, which is why batching boosts throughput.' },

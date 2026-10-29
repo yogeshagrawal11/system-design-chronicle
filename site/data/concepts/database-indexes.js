@@ -130,7 +130,7 @@ SD.concept({
     '**DynamoDB** global secondary indexes are effectively separate tables, asynchronously maintained.',
     '**Elasticsearch** is built on Lucene inverted indexes, purpose-made for full-text search.',
   ],
-  related: ['storage-engines', 'database-scaling', 'spatial-indexing', 'sql-vs-nosql', 'bloom-filters'],
+  related: ['roaring-bitmaps', 'storage-engines', 'database-scaling', 'spatial-indexing', 'sql-vs-nosql', 'bloom-filters'],
   quiz: [
     { q: 'Index on `(user_id, created_at)`. Which query benefits most?', options: ['`WHERE created_at > X`', '`WHERE user_id = 7 ORDER BY created_at DESC LIMIT 10`', '`WHERE LOWER(user_id) = 7`', '`ORDER BY created_at`'], answer: 1, explain: 'Equality on the leading column, then rows come out already sorted by the second column — seek and read 10 entries.' },
     { q: 'Why might the planner ignore an index on `status` for `WHERE status = \'active\'`?', options: ['Indexes do not support strings', 'Most rows are active, so a sequential scan is cheaper than many random lookups', 'The index is corrupted', 'Planners never use indexes for equality'], answer: 1, explain: 'Low selectivity: if the predicate matches a large fraction of the table, sequential I/O wins.' },

@@ -234,7 +234,7 @@ SD.design({
         { name: 'Per-user indexes', pros: ['Perfect isolation'], cons: ['Shared documents duplicated thousands of times; impossible at scale'] },
         { name: 'Source permission check per result (late binding)', pros: ['Always current'], cons: ['Slow, heavy on source APIs; best as a final check, not the main filter'] },
       ],
-      verdict: 'Early binding with group-level ACLs in the index and filtered search, principals resolved per query from the IdP, tenant-level hard isolation, and optional late-binding checks for sensitive tenants. The pre-filter itself is a set intersection — see [Roaring bitmaps](#/concept/roaring-bitmaps) for how engines do it fast — and [authentication & authorization](#/concept/authentication-authorization).',
+      verdict: 'Early binding with group-level ACLs in the index and filtered search, principals resolved per query from the IdP, tenant-level hard isolation, and optional late-binding checks for sensitive tenants. See [authentication & authorization](#/concept/authentication-authorization).',
     },
     {
       title: '📎 Grounded answers with citations',
@@ -273,41 +273,8 @@ SD.design({
         '- **Citation precision** — cited chunks actually support the sentence.\n' +
         '- **Correct refusal rate** on questions whose answer is not in the corpus (or not visible to this user).\n\n' +
         '**Golden set**: start with 200–500 real questions from logs, labeled by domain experts, including permission-sensitive cases (the same question asked by users with different access). Grow it with every escalated bug. Online, track thumbs, citation click-through, "no answer" rate and reformulation rate.',
+      sims: ['rag-eval-metrics'],
       verdict: 'Gate every change on recall@k and faithfulness from a golden set that includes no-answer and permission cases; monitor online signals to grow the set.',
-    },
-    {
-      title: '⚖️ The k trade-off: precision vs. recall vs. the context budget',
-      md: 'How many chunks (`k`) you put in the prompt is the single knob that most directly trades retrieval **precision** against **recall** — and more is not better.\n\n' +
-        '- **Precision** — of the chunks you retrieved, how many are actually relevant? *How good is what I fetched?*\n' +
-        '- **Recall** — of the chunks that *should* have been fetched, how many did you get? *How much of what I needed did I find?*\n\n' +
-        'Turn the knob and watch them move in opposite directions:\n\n' +
-        '- **k = 1**: the single best chunk is usually spot-on, so precision is high — but if answering the question needs five passages, recall is terrible and the answer is incomplete.\n' +
-        '- **k = 50**: you almost certainly capture every relevant passage (high recall), but 40+ of those chunks are noise. Precision collapses, and that noise has three concrete costs: **money** (you pay per input token), **latency** (bigger prompts generate slower), and **distraction** — models attend worst to the *middle* of a long context (*Lost in the Middle*), so burying the right passage among 49 wrong ones can make the answer *worse* than with k = 8.\n\n' +
-        'So the goal is not maximum retrieval, it is *high-quality* retrieval: fetch enough to answer completely without drowning the model. This is exactly why the pipeline is a funnel rather than a single `k` — **recall first, then precision**:\n\n' +
-        '```\n100 vector + 100 BM25   → cast a wide net          (optimize recall)\n  → RRF fuse → top 50    → cheap merge\n  → cross-encoder rerank → reorder by true relevance\n  → top 5–8 over threshold → tight, relevant context  (optimize precision)\n```\n\n' +
-        'Each stage is cheap where it must be wide (lexical + vector search over millions) and expensive only where it is narrow (a GPU cross-encoder over 50 pairs). The **threshold** matters as much as `k`: if the best reranked score is still weak, returning *fewer* than k chunks — or none, and refusing — beats padding the prompt with irrelevant text.',
-      options: [
-        { name: 'Small fixed k (e.g. 3)', pros: ['High precision, cheap, fast', 'Little distraction'], cons: ['Misses multi-passage answers; recall suffers on complex questions'] },
-        { name: 'Large fixed k (e.g. 50 straight into the prompt)', pros: ['High recall — the answer is almost certainly in there'], cons: ['Noise kills precision; cost and latency balloon; lost-in-the-middle degrades answers'] },
-        { name: 'Wide recall → rerank → small k with threshold', pros: ['Recall from the wide net, precision from the reranker + threshold', 'Adapts: returns fewer chunks (or refuses) when nothing is relevant'], cons: ['Needs a reranker and a tuned threshold'], chosen: true },
-      ],
-      verdict: 'Treat `k` as a recall/precision/cost dial, not a "bigger is better" setting. Retrieve wide, rerank, then keep only the few chunks above a relevance threshold — and tune the whole funnel against the golden set.',
-    },
-    {
-      title: '📦 RAGAS and the eval tooling landscape',
-      md: 'Scoring one answer by hand is easy; scoring hundreds every time you change the chunker, embedding model, `k`, reranker or prompt is not. That is what RAG-specific eval frameworks automate.\n\n' +
-        '**RAGAS** ("RAG Assessment") is the best-known. It computes four metrics that map cleanly onto the two halves of the pipeline, mostly using an LLM judge and needing little or no hand-labeled ground truth:\n\n' +
-        '| RAGAS metric | Half it measures | Question it answers |\n' +
-        '|---|---|---|\n' +
-        '| **Context precision** | Retrieval | Are the retrieved chunks relevant (and ranked well)? |\n' +
-        '| **Context recall** | Retrieval | Did we retrieve everything needed to answer? |\n' +
-        '| **Faithfulness** | Generation | Is every claim supported by the retrieved context? |\n' +
-        '| **Answer relevancy** | Generation | Does the answer actually address the question? |\n\n' +
-        'The power is in reading them *together*, not as one blended score. Two diagnostic patterns:\n\n' +
-        '- **High faithfulness, low context recall** → the model uses what it gets correctly, but the retriever is not finding enough. Fix *retrieval* (chunking, k, hybrid search, reranker).\n' +
-        '- **Strong context precision/recall, low faithfulness** → retrieval is fine but the model is adding unsupported claims. Fix *generation* (prompt, model, citation verification).\n\n' +
-        'No single tool does everything, so teams combine them — see the [eval tools comparison](#/concept/llm-evaluation-guardrails) for RAGAS vs. TruLens vs. LangSmith vs. DeepEval vs. in-house metrics, and when to reach for each.',
-      verdict: 'Use a RAG-specific framework (RAGAS as the common starting point) to turn qualitative behavior into per-stage numbers; always read retrieval and generation metrics separately so you fix the right half. Extend with custom, domain-specific metrics in production.',
     },
   ],
   scaling: [
@@ -346,7 +313,7 @@ SD.design({
     '**OpenSearch**, **Elasticsearch** and **Vespa** support hybrid lexical + vector queries with metadata filtering in one request.',
     'The original **RAG** paper (Lewis et al., 2020) coupled a dense retriever with a generator; *Lost in the Middle* (Liu et al., 2023) showed models use information at the start and end of long contexts best.',
   ],
-  concepts: ['retrieval-augmented-generation', 'embeddings-vector-search', 'llm-fundamentals', 'llm-evaluation-guardrails', 'database-indexes', 'roaring-bitmaps', 'authentication-authorization', 'caching-strategies', 'change-data-capture', 'database-sharding', 'batch-vs-stream-processing'],
+  concepts: ['rag-fundamentals', 'rag-evaluation', 'embeddings-vector-search', 'roaring-bitmaps', 'llm-fundamentals', 'llm-evaluation-guardrails', 'database-indexes', 'authentication-authorization', 'caching-strategies', 'change-data-capture', 'database-sharding', 'batch-vs-stream-processing'],
   quiz: [
     { q: 'Users complain the assistant cannot find answers for error codes like "ERR_4012", while conceptual questions work well. What is the most likely fix?', options: ['Bigger LLM', 'Add BM25 keyword search and fuse it with vector search', 'Larger chunks', 'Higher embedding dimensions'], answer: 1, explain: 'Dense embeddings blur rare exact tokens; lexical search matches them exactly. Hybrid retrieval covers both.' },
     { q: 'You take the global top 100 chunks and then remove those the user cannot access. A contractor with narrow access often gets "no results". Why?', options: ['The reranker is broken', 'Post-filtering removes most candidates; the permission filter must be applied inside the search', 'Their groups are cached', 'The index is stale'], answer: 1, explain: 'Pre-filtered (filtered kNN / filtered BM25) search finds the best chunks among those the user can see.' },

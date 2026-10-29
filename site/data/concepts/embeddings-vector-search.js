@@ -171,7 +171,7 @@ SD.concept({
     'E-commerce search (e.g. Amazon, Shopify stores) blends lexical matching with semantic embeddings so both \"red running shoes\" and exact model numbers work.',
     'Most RAG stacks — from LangChain/LlamaIndex prototypes to Bedrock Knowledge Bases — store chunk embeddings in pgvector, OpenSearch or a dedicated vector DB.',
   ],
-  related: ['llm-fundamentals', 'retrieval-augmented-generation', 'llm-inference-optimization', 'llm-evaluation-guardrails', 'ai-agents-tool-use', 'database-indexes', 'database-sharding', 'caching-strategies', 'change-data-capture'],
+  related: ['rag-fundamentals', 'roaring-bitmaps', 'llm-fundamentals', 'llm-inference-optimization', 'llm-evaluation-guardrails', 'ai-agents-tool-use', 'database-indexes', 'database-sharding', 'caching-strategies', 'change-data-capture'],
   quiz: [
     { q: 'You store 50M chunks as 1,024-dim float32 vectors in an HNSW index. What is the minimum RAM for the raw vectors alone?', options: ['About 2 GB', 'About 20 GB', 'About 200 GB', 'About 2 TB'], answer: 2, explain: '50M × 1,024 × 4 bytes ≈ 205 GB, before the HNSW graph links. This is why quantization or IVF-PQ/DiskANN become attractive at this scale.' },
     { q: 'Users search support docs for exact error codes like `E4012`, and vector search keeps returning chunks about other errors. Best fix?', options: ['Increase the embedding dimension', 'Add BM25 keyword search and fuse results (hybrid search)', 'Lower the HNSW efSearch', 'Switch from cosine to Euclidean distance'], answer: 1, explain: 'Embeddings blur rare exact tokens; lexical BM25 matches them precisely. Fusing both covers semantic and exact queries.' },
