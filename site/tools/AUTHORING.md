@@ -11,6 +11,29 @@ Reference examples (read them first, match their depth and style):
 Validate your files after writing each one: `node tools/validate.js data/designs/<file>.js` (from the `site/` folder).
 Warnings about unknown cross-reference ids are OK **only** if the id is in the registry below. Fix every ERROR.
 
+## Build & deploy (run after adding/editing content)
+
+Run these from the `site/` folder, in order. All output is static and committed to
+the repo — GitHub Pages just serves it, so there is no runtime/CI build step.
+
+1. `python3 tools/build.py` — links the data `<script>` tags into `index.html` (DATA:START/END block).
+2. `node tools/validate.js` — must print `✅ no errors` (this is what CI runs; keep it green).
+3. `node tools/gen-pages.js` — pre-renders one crawlable static page per item at
+   `/<kind>/<id>/index.html` (concept/design/company/paper) **and** a 1200×630 OG
+   image per item at `og/<kind>/<id>.png` (plus the site-level `og/home.png`).
+   Each page carries per-page `<title>`/description/canonical + Open Graph/Twitter
+   tags and redirects real browsers into the hash SPA (`/#/<kind>/<id>`); crawlers
+   and no-JS clients read the static meta + body. Needs Chromium/Chrome on PATH
+   (override with `CHROMIUM_BIN`). Use `--no-img` to skip image rendering while
+   iterating, or `--one <kind>/<id>` to (re)generate a single page.
+4. `python3 tools/gen-sitemap.py` — rebuilds `sitemap.xml` by scanning the generated
+   `/<kind>/<id>/` folders (run it **after** step 3 so URLs match the pages).
+5. `node tools/gen-llms.js` — rebuilds `llms.txt` (Markdown content map for LLMs).
+
+All generators accept an optional base-URL argument (default
+`https://sd.agentic-solutions.net/`). Generated folders live outside `data/` and
+`sims/`, so `validate.js` ignores them.
+
 ## Writing rules
 - Write **in your own words**. Use the reference links only to check facts and coverage — never copy sentences.
 - Work on **one topic at a time**: research it, think it through end-to-end (does the architecture actually work? does each flow make sense on the diagram? are numbers realistic?), write the file, validate, then move to the next.

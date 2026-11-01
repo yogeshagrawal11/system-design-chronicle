@@ -225,3 +225,6 @@ __marimo__/
 .vscode/
 *.swp
 CLAUDE.md
+
+# OG image rasterizer scratch dir (headless Chromium temp HTML + profiles)
+site/tools/.ogtmp/

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Distributed Web Crawler · The System Design Chronicle</title>
+<meta name="description" content="A web crawler starts from seed URLs, downloads pages, extracts links, and keeps going — feeding search engines, archives (Common Crawl, the Internet Archive) and ML training sets. Fetching one page is trivial; fetching billions is a scheduling problem. The crawler must be polite (never hammer…">
+<link rel="canonical" href="https://sd.agentic-solutions.net/design/web-crawler/">
+<meta name="theme-color" content="#7c3aed">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The System Design Chronicle">
+<meta property="og:title" content="Distributed Web Crawler · The System Design Chronicle">
+<meta property="og:description" content="A web crawler starts from seed URLs, downloads pages, extracts links, and keeps going — feeding search engines, archives (Common Crawl, the Internet Archive) and ML training sets. Fetching one page is trivial; fetching billions is a scheduling problem. The crawler must be polite (never hammer…">
+<meta property="og:url" content="https://sd.agentic-solutions.net/design/web-crawler/">
+<meta property="og:image" content="https://sd.agentic-solutions.net/og/design/web-crawler.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Distributed Web Crawler — The System Design Chronicle">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Distributed Web Crawler · The System Design Chronicle">
+<meta name="twitter:description" content="A web crawler starts from seed URLs, downloads pages, extracts links, and keeps going — feeding search engines, archives (Common Crawl, the Internet Archive) and ML training sets. Fetching one page is trivial; fetching billions is a scheduling problem. The crawler must be polite (never hammer…">
+<meta name="twitter:image" content="https://sd.agentic-solutions.net/og/design/web-crawler.png">
+
+<!-- Real browsers are sent into the interactive single-page app. Crawlers and
+     no-JS clients keep the static content below. -->
+<script>location.replace("/#/design/web-crawler");</script>
+<style>
+  body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#0b0718;color:#ece9ff;
+    margin:0;padding:48px 24px;line-height:1.6;display:flex;justify-content:center}
+  main{max-width:720px}
+  .kind{color:#a78bfa;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+  h1{font-size:40px;margin:.2em 0 .1em}
+  .tagline{color:#c4b5fd;font-size:20px;margin:0 0 1em}
+  p{color:#cdc8ee}
+  a.cta{display:inline-block;margin-top:24px;padding:12px 22px;border-radius:10px;
+    background:#7c3aed;color:#fff;text-decoration:none;font-weight:600}
+  .brand{margin-top:40px;color:#8b82b8;font-size:14px}
+  .brand a{color:#a78bfa}
+</style>
+</head>
+<body>
+<main>
+  <div class="kind">System Design</div>
+  <h1>🕷️ Distributed Web Crawler</h1>
+  <p class="tagline">Download billions of pages a month — politely, without loops, duplicates or getting stuck in traps.</p>
+  <p>A web crawler starts from seed URLs, downloads pages, extracts links, and keeps going — feeding search engines, archives (Common Crawl, the Internet Archive) and ML training sets. Fetching one page is trivial; fetching billions is a scheduling problem. The crawler must be polite (never hammer…</p>
+  <a class="cta" href="/#/design/web-crawler">Open the interactive version →</a>
+  <p class="brand"><a href="/">The System Design Chronicle</a> — animated architectures, simulators and guided builds.</p>
+</main>
+</body>
+</html>

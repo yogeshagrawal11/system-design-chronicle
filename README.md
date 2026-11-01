@@ -53,7 +53,7 @@ To start a new one: `cp templates/case-study-template.md 03-case-studies/<name>.
 
 `site/` is a dependency-free interactive learning site (animated architecture diagrams, step-through request flows, chaos/failure mode, live capacity calculators, simulators, quizzes, progress tracking).
 
-🌐 **Live:** https://yogeshagrawal11.github.io/system-design-chronicle/
+🌐 **Live:** https://sd.agentic-solutions.net/
 
 ```bash
 open site/index.html                         # works straight from disk
