@@ -1,0 +1,279 @@
+# The System Design Chronicle
+
+> A dependency-free, interactive system design learning site: animated architecture diagrams, step-through request flows, failure/chaos modes, live capacity calculators, hands-on simulators and quizzes. Covers fundamentals through GenAI (RAG, agents, LLM serving), with real company case studies. All content is educational and written from public sources.
+
+Navigation is hash-based (e.g. `#/design/url-shortener`). The links below point to each item inside the single-page app. Content is grouped as Concepts, System Designs, Company Case Studies, Papers and Simulators.
+
+## Concepts
+
+### Core Concepts
+
+- [Availability](https://sd.agentic-solutions.net/#/concept/availability): The fraction of time users can actually use the system, measured in nines.
+- [Back-of-the-Envelope Estimation](https://sd.agentic-solutions.net/#/concept/back-of-envelope-estimation): Rough, fast arithmetic for QPS, storage, bandwidth and server counts, to know which problems are real.
+- [CAP Theorem & PACELC](https://sd.agentic-solutions.net/#/concept/cap-theorem): When the network splits, a replicated system must choose: refuse requests, or risk stale answers.
+- [Consistent Hashing](https://sd.agentic-solutions.net/#/concept/consistent-hashing): Spread keys across servers so adding or removing one moves only a small slice of data.
+- [Failover](https://sd.agentic-solutions.net/#/concept/failover): Automatically switch traffic to a standby when the primary dies, without two primaries and without losing data.
+- [Fault Tolerance](https://sd.agentic-solutions.net/#/concept/fault-tolerance): Keep working correctly while components fail, by design rather than by luck.
+- [Latency, Throughput & Bandwidth](https://sd.agentic-solutions.net/#/concept/latency-throughput-bandwidth): How long one request takes, how many get done per second, and how much the pipe can carry.
+- [Reliability](https://sd.agentic-solutions.net/#/concept/reliability): Doing the right thing, correctly, over time, even when parts fail. Measured with MTBF, MTTR and error rates.
+- [Scalability](https://sd.agentic-solutions.net/#/concept/scalability): Handle more users, data and requests by adding resources, without rewriting the system each time.
+- [Single Point of Failure (SPOF)](https://sd.agentic-solutions.net/#/concept/spof): Any one thing whose failure takes down a critical user flow, and how to find and remove it.
+- [Unique ID Generation](https://sd.agentic-solutions.net/#/concept/unique-id-generation): Mint billions of unique, ideally sortable IDs across many machines without a central bottleneck.
+
+### Networking
+
+- [Checksums, Hashes & Merkle Trees](https://sd.agentic-solutions.net/#/concept/checksums): Small fingerprints that catch silent corruption, identify content, and let replicas find differences cheaply.
+- [DNS (Domain Name System)](https://sd.agentic-solutions.net/#/concept/dns): The internet's distributed, cached phone book that turns names into addresses, and a powerful traffic-steering tool.
+- [HTTP & HTTPS](https://sd.agentic-solutions.net/#/concept/http-https): The request-response protocol of the web, how TLS secures it, and how HTTP/1.1, 2 and 3 differ.
+- [IP Addresses, CIDR & NAT](https://sd.agentic-solutions.net/#/concept/ip-addresses): How every interface gets a routable address, how ranges are carved up, and how private networks reach the internet.
+- [Load Balancing](https://sd.agentic-solutions.net/#/concept/load-balancing): Spread requests across many servers, route around failures, and pick the right algorithm and layer.
+- [OSI Model](https://sd.agentic-solutions.net/#/concept/osi-model): Seven layers that each do one job, from voltages on a wire up to HTTP requests.
+- [Proxy vs Reverse Proxy](https://sd.agentic-solutions.net/#/concept/proxy-vs-reverse-proxy): Both sit in the middle; a forward proxy speaks for clients, a reverse proxy speaks for servers.
+- [TCP vs UDP](https://sd.agentic-solutions.net/#/concept/tcp-vs-udp): Reliable ordered byte stream, or fast fire-and-forget datagrams, and QUIC, which gets the best of both.
+
+### API Fundamentals
+
+- [API Design Best Practices](https://sd.agentic-solutions.net/#/concept/api-design): Naming, versioning, pagination, errors and status codes that make an API predictable and hard to misuse.
+- [API Gateway](https://sd.agentic-solutions.net/#/concept/api-gateway): One front door for many microservices: auth, rate limits, routing and aggregation in a single place.
+- [APIs](https://sd.agentic-solutions.net/#/concept/apis): The contract that lets one program ask another for data or actions without knowing how it works inside.
+- [Authentication & Authorization](https://sd.agentic-solutions.net/#/concept/authentication-authorization): AuthN proves who you are; AuthZ decides what you may do — sessions, JWTs, OAuth 2.0/OIDC, RBAC and ABAC.
+- [Idempotency](https://sd.agentic-solutions.net/#/concept/idempotency): Make retries safe: doing the same operation twice must have the same effect as doing it once.
+- [Rate Limiting](https://sd.agentic-solutions.net/#/concept/rate-limiting): Cap how many requests a client may make per time window — protecting capacity, fairness and your bill.
+- [REST vs GraphQL](https://sd.agentic-solutions.net/#/concept/rest-vs-graphql): Server-shaped resources at many URLs vs client-shaped queries at one endpoint.
+- [Webhooks](https://sd.agentic-solutions.net/#/concept/webhooks): Do not poll — let the provider call your URL when something happens, signed, retried and deduplicated.
+- [WebSockets](https://sd.agentic-solutions.net/#/concept/websockets): Upgrade one HTTP request into a persistent, two-way pipe so the server can push instantly.
+
+### Databases
+
+- [ACID Transactions](https://sd.agentic-solutions.net/#/concept/acid-transactions): Atomicity, Consistency, Isolation, Durability — and the isolation levels that decide which concurrency bugs you get.
+- [Active-Passive vs Active-Active](https://sd.agentic-solutions.net/#/concept/database-architectures): One live site with a warm standby, or several sites all taking writes — and how to resolve the conflicts that follow.
+- [Bloom Filters](https://sd.agentic-solutions.net/#/concept/bloom-filters): A few bits per item answer "definitely not here" or "probably here" — and save expensive lookups.
+- [Data Replication](https://sd.agentic-solutions.net/#/concept/data-replication): Keep copies of the same data on several machines — for availability, read scale and locality — and decide how in-sync they must be.
+- [Database Indexes](https://sd.agentic-solutions.net/#/concept/database-indexes): A sorted side-structure that turns a full table scan into a handful of page reads — paid for on every write.
+- [Database Sharding](https://sd.agentic-solutions.net/#/concept/database-sharding): Split one huge dataset across many independent databases by a shard key — and live with the consequences.
+- [Roaring Bitmaps](https://sd.agentic-solutions.net/#/concept/roaring-bitmaps): Compressed sets of integer ids that stay small whether sparse or dense, and intersect millions of ids in microseconds. They power the filters behind search engines, analytics databases and permission-aware RAG.
+- [Scaling a Database](https://sd.agentic-solutions.net/#/concept/database-scaling): Climb the ladder in order: tune queries and indexes → cache → bigger box → replicas → partition → shard.
+- [Spatial Indexing](https://sd.agentic-solutions.net/#/concept/spatial-indexing): Geohash, quadtrees, S2/H3 and R-trees turn "what is near me?" from a full scan into a few cell lookups.
+- [SQL vs NoSQL](https://sd.agentic-solutions.net/#/concept/sql-vs-nosql): Relational tables you can query any way vs data shaped around the queries you already know.
+- [Storage Engines: B-Tree vs LSM-Tree](https://sd.agentic-solutions.net/#/concept/storage-engines): Update pages in place, or append and merge later — the choice that decides read, write and space amplification.
+- [Types of Databases](https://sd.agentic-solutions.net/#/concept/database-types): Relational, key-value, document, wide-column, graph, time-series, search, vector and more — each built for a query shape.
+
+### Caching
+
+- [Cache Eviction Policies](https://sd.agentic-solutions.net/#/concept/cache-eviction-policies): When the cache is full, something has to go. The choice of victim decides your hit ratio.
+- [Caching 101](https://sd.agentic-solutions.net/#/concept/caching-101): Keep a copy of expensive answers close to where they are needed, so most requests never touch the slow source.
+- [Caching Strategies](https://sd.agentic-solutions.net/#/concept/caching-strategies): Who loads the cache, who writes the database, and in what order — five patterns and their consistency trade-offs.
+- [Content Delivery Network (CDN)](https://sd.agentic-solutions.net/#/concept/cdn): A worldwide fleet of caches that serves your content from a few milliseconds away instead of from one distant origin.
+- [Distributed Caching](https://sd.agentic-solutions.net/#/concept/distributed-caching): Spread a cache over many nodes so it can hold terabytes and serve millions of ops/s — then deal with hot keys, stampedes and node failures.
+
+### Async Communication
+
+- [Change Data Capture (CDC)](https://sd.agentic-solutions.net/#/concept/change-data-capture): Turn every committed database change into an ordered event stream that search, caches and warehouses can follow in near real time.
+- [Message Queues](https://sd.agentic-solutions.net/#/concept/message-queues): A durable buffer that lets producers hand off work now and workers do it at their own pace — with retries, DLQs and backpressure.
+- [Publish / Subscribe](https://sd.agentic-solutions.net/#/concept/pub-sub): Announce that something happened once, and let any number of independent services react to it.
+
+### Distributed Systems
+
+- [Circuit Breakers, Retries & Bulkheads](https://sd.agentic-solutions.net/#/concept/circuit-breaker): Stop hammering a failing dependency, retry only in ways that help, and keep one bad dependency from sinking the whole service.
+- [Consensus (Paxos & Raft)](https://sd.agentic-solutions.net/#/concept/consensus-algorithms): Getting a group of unreliable machines to agree on one value — and one ordered log — even while some of them crash.
+- [Disaster Recovery](https://sd.agentic-solutions.net/#/concept/disaster-recovery): RPO, RTO and the four standard DR strategies — from nightly backups to active-active across regions.
+- [Distributed Locking](https://sd.agentic-solutions.net/#/concept/distributed-locking): Mutual exclusion across machines — why every lock must be a lease, and why leases are unsafe without fencing tokens.
+- [Distributed Tracing](https://sd.agentic-solutions.net/#/concept/distributed-tracing): Follow one request across dozens of services and see exactly where its time — or its error — went.
+- [Gossip Protocol](https://sd.agentic-solutions.net/#/concept/gossip-protocol): Every node periodically tells a few random peers what it knows — and the whole cluster learns it in O(log N) rounds.
+- [Heartbeats & Failure Detection](https://sd.agentic-solutions.net/#/concept/heartbeats): Periodic "I’m alive" signals — and the surprisingly hard question of when silence means dead.
+- [Observability: Metrics, Logs, Traces & SLOs](https://sd.agentic-solutions.net/#/concept/observability): Know when users are hurting, find out why fast, and decide with data how much risk you can take.
+- [Saga Pattern](https://sd.agentic-solutions.net/#/concept/saga-pattern): Run a business transaction across services as a sequence of local transactions, undoing completed steps with compensations if a later one fails.
+- [Service Discovery](https://sd.agentic-solutions.net/#/concept/service-discovery): How services find healthy instances of each other when IPs change every deploy and autoscale.
+
+### Architectural Patterns
+
+- [Client-Server Architecture](https://sd.agentic-solutions.net/#/concept/client-server): Clients ask, servers answer: the request/response model nearly every networked system is built on.
+- [CQRS & Event Sourcing](https://sd.agentic-solutions.net/#/concept/cqrs-event-sourcing): Store every change as an event, and serve reads from views built for each query, not from the write model.
+- [Event-Driven Architecture](https://sd.agentic-solutions.net/#/concept/event-driven-architecture): Services announce facts ("OrderPlaced") and others react on their own time, so producers never need to know who is listening.
+- [Microservices](https://sd.agentic-solutions.net/#/concept/microservices): Split a big application into small, independently deployable services that each own one business capability and its data.
+- [Peer-to-Peer (P2P)](https://sd.agentic-solutions.net/#/concept/peer-to-peer): Every node is both client and server, so capacity grows with the number of users instead of the size of your data center.
+- [Serverless](https://sd.agentic-solutions.net/#/concept/serverless): Ship functions and managed services; the cloud provisions, scales and bills per request, down to zero.
+
+### Trade-offs
+
+- [Batch vs Stream Processing](https://sd.agentic-solutions.net/#/concept/batch-vs-stream-processing): Process a big pile of data on a schedule, or each event the moment it arrives, and what Lambda and Kappa architectures do with both.
+- [Concurrency vs Parallelism](https://sd.agentic-solutions.net/#/concept/concurrency-vs-parallelism): Concurrency is dealing with many things at once; parallelism is doing many things at once.
+- [Polling vs Long Polling vs SSE vs WebSockets](https://sd.agentic-solutions.net/#/concept/long-polling-vs-websockets): Four ways for a server to get fresh data to a browser, from "keep asking" to "keep the line open".
+- [Push vs Pull](https://sd.agentic-solutions.net/#/concept/push-vs-pull): Should the producer send data as soon as it exists, or should the consumer fetch it when ready? The answer shapes feeds, metrics, queues and CDNs.
+- [Read-Through vs Write-Through Caching](https://sd.agentic-solutions.net/#/concept/read-through-vs-write-through): Fill the cache lazily when someone reads, or eagerly whenever someone writes? Each choice moves cost and staleness to a different place.
+- [REST vs RPC (gRPC)](https://sd.agentic-solutions.net/#/concept/rest-vs-rpc): Model your API as resources you GET and PUT, or as functions you call? The usual answer: REST at the edge, gRPC inside.
+- [Stateful vs Stateless Architecture](https://sd.agentic-solutions.net/#/concept/stateful-vs-stateless): Does the server remember you between requests? The answer decides how easily you can scale, deploy and recover.
+- [Strong vs Eventual Consistency](https://sd.agentic-solutions.net/#/concept/strong-vs-eventual-consistency): Should every read see the latest write right away, or is "correct in a moment" good enough? Coordination costs latency and availability.
+- [Synchronous vs Asynchronous Communication](https://sd.agentic-solutions.net/#/concept/sync-vs-async-communication): Wait for the answer, or hand off the work and move on? The choice decides whether one slow service can take down the rest.
+- [Top System Design Trade-offs](https://sd.agentic-solutions.net/#/concept/top-tradeoffs): There are no perfect architectures, only choices with costs. This is a map of the ones that come up again and again.
+- [Vertical vs Horizontal Scaling](https://sd.agentic-solutions.net/#/concept/vertical-vs-horizontal-scaling): Buy a bigger machine, or add more machines? Most real systems do both, at different layers.
+
+### GenAI Systems
+
+- [AI Agents & Tool Use](https://sd.agentic-solutions.net/#/concept/ai-agents-tool-use): An LLM in a loop that decides which tools to call next — powerful for open-ended tasks, and a source of new failure modes when used where a fixed workflow would do.
+- [Embeddings & Vector Search](https://sd.agentic-solutions.net/#/concept/embeddings-vector-search): Turn meaning into coordinates, then find the nearest neighbours among millions of vectors in milliseconds — approximately.
+- [LLM Evaluation & Guardrails](https://sd.agentic-solutions.net/#/concept/llm-evaluation-guardrails): You cannot unit-test a model into correctness — measure quality with eval sets and judges, and wrap every call in input and output checks.
+- [LLM Fundamentals for System Designers](https://sd.agentic-solutions.net/#/concept/llm-fundamentals): Tokens, context windows, sampling, prefill vs decode — the handful of mechanics that drive every LLM latency, cost and reliability number.
+- [LLM Inference Optimization](https://sd.agentic-solutions.net/#/concept/llm-inference-optimization): KV cache, continuous batching, PagedAttention, quantization, speculative decoding and parallelism — how serving stacks squeeze 10x more tokens out of the same GPUs.
+- [RAG (Retrieval-Augmented Generation)](https://sd.agentic-solutions.net/#/concept/rag-fundamentals): Look up the right passages first, then let the model answer from them, with citations. Most RAG quality problems are retrieval problems.
+- [RAG Evaluation](https://sd.agentic-solutions.net/#/concept/rag-evaluation): Score retrieval and generation separately, with a golden set, calibrated judges and CI gates, so you know which half to fix and never ship a silent regression.
+- [Retrieval-Augmented Generation (RAG)](https://sd.agentic-solutions.net/#/concept/retrieval-augmented-generation): Give the model the facts at question time instead of baking them into its weights — retrieve relevant text, put it in the prompt, and make the answer cite it.
+
+### Claude Architect Cert
+
+- [Agent SDK Hooks: Interception & Normalization](https://sd.agentic-solutions.net/#/concept/cca-agent-sdk-hooks): PreToolUse decides whether a call may run; PostToolUse reshapes what the model sees. Both are your code, so their guarantees are deterministic.
+- [Agentic Loops & stop_reason](https://sd.agentic-solutions.net/#/concept/cca-agentic-loop): Send, inspect stop_reason, run the requested tools, append the results, repeat — and let the structured signal, not the prose, decide when to stop.
+- [Batch Processing with the Message Batches API](https://sd.agentic-solutions.net/#/concept/cca-batch-processing): Half the price, results within 24 hours, no latency promise. Use it for work nobody is waiting on, key everything by custom_id, and resubmit only what failed.
+- [Built-in Tools: Read, Write, Edit, Bash, Grep, Glob](https://sd.agentic-solutions.net/#/concept/cca-builtin-tools): Grep searches inside files, Glob finds files by name, Read and Write handle whole files, Edit changes one unique spot. Explore a codebase step by step from entry points; don't read everything up front.
+- [Claude Code in CI/CD Pipelines](https://sd.agentic-solutions.net/#/concept/cca-claude-code-ci): Run Claude headless with -p, force schema-valid JSON for machine consumers, feed it project context and prior findings, and never let the author grade its own work.
+- [CLAUDE.md Hierarchy, @imports & .claude/rules](https://sd.agentic-solutions.net/#/concept/cca-claude-md): Put each instruction at the scope where it belongs: personal, team-shared or package-specific, and check what actually loaded before blaming the model.
+- [Coordinator–Subagent Orchestration](https://sd.agentic-solutions.net/#/concept/cca-coordinator-subagents): One coordinator decomposes, delegates, routes and aggregates; specialised subagents work in isolated contexts and report back only to the hub.
+- [Custom Slash Commands & Skills](https://sd.agentic-solutions.net/#/concept/cca-commands-skills): Package repeatable workflows as /commands and SKILL.md files: share them through git, isolate noisy ones with context: fork, and keep always-true rules in CLAUDE.md.
+- [Distributing Tools Across Agents & tool_choice](https://sd.agentic-solutions.net/#/concept/cca-tool-distribution): Give each agent only the 4–5 tools its role needs, swap generic tools for constrained ones, and use tool_choice when a call must happen, or must happen first.
+- [Error Propagation Across Multi-Agent Systems](https://sd.agentic-solutions.net/#/concept/cca-error-propagation): Recover locally from what is transient, report what is not with enough structure to act on, never disguise a failure as "no results", and never let one failed source sink the whole job.
+- [Escalation and Ambiguity Resolution](https://sd.agentic-solutions.net/#/concept/cca-escalation): Hand off when the customer asks, when policy runs out, or when progress stops; ask when the data is ambiguous; never let mood or self-rated confidence decide.
+- [Explicit Criteria for Precision](https://sd.agentic-solutions.net/#/concept/cca-explicit-criteria): Say exactly what counts as a finding and what to skip. Telling the model to "be careful" does not raise precision; categorical criteria do.
+- [Few-Shot Prompting for Consistency](https://sd.agentic-solutions.net/#/concept/cca-few-shot): When detailed instructions still give inconsistent output, show the model 2–4 worked examples, especially of the ambiguous cases, along with the reasoning behind each.
+- [Human Review Workflows and Confidence Calibration](https://sd.agentic-solutions.net/#/concept/cca-human-review): Do not let a 97% headline hide an 85% segment: measure by document type and field, calibrate confidence against labeled data, sample what you auto-accept, and spend reviewer time where it matters.
+- [Integrating MCP Servers into Claude Code & Agents](https://sd.agentic-solutions.net/#/concept/cca-mcp-integration): Shared servers go in a committed .mcp.json with ${ENV} placeholders for secrets, personal ones in ~/.claude.json. Use community servers for standard systems, and expose catalogs as resources so the agent doesn't have to go exploring.
+- [Iterative Refinement: Examples, Tests First, Interviews](https://sd.agentic-solutions.net/#/concept/cca-iterative-refinement): Converge faster by giving Claude concrete targets (input/output pairs, failing tests, answered questions) instead of more adjectives, and batch only the feedback that interacts.
+- [Managing Context in Large Codebase Exploration](https://sd.agentic-solutions.net/#/concept/cca-codebase-context): Delegate the noisy digging to subagents, write what you learn to a scratchpad, carry summaries between phases, checkpoint state for crashes, and compact before the window turns to mush.
+- [Multi-Instance & Multi-Pass Review](https://sd.agentic-solutions.net/#/concept/cca-multi-pass-review): Do not ask the author to grade its own work. Use a fresh reviewer instance without the generator's reasoning, split big reviews into per-file and integration passes, and route findings by verified confidence.
+- [Path-Specific Rules (paths: globs)](https://sd.agentic-solutions.net/#/concept/cca-path-rules): Load a convention only when Claude touches a file it applies to, whether that file is in one folder or spread across the entire codebase.
+- [Plan Mode vs Direct Execution (and the Explore Subagent)](https://sd.agentic-solutions.net/#/concept/cca-plan-mode): Spend a read-only planning pass when the change is big, ambiguous or architectural. Just do it when the change is small and obvious. Push noisy discovery into a subagent either way.
+- [Preserving Critical Context in Long Interactions](https://sd.agentic-solutions.net/#/concept/cca-context-preservation): Keep the numbers, dates and promises that matter in a structured layer the summarizer cannot touch, and stop bloated tool output from crowding them out.
+- [Provenance and Uncertainty in Multi-Source Synthesis](https://sd.agentic-solutions.net/#/concept/cca-provenance): Every claim travels with its source, excerpt and date; conflicts are shown, not settled by coin-flip; and each kind of content is presented in the form that suits it.
+- [Session State: Resume, Fork & Fresh Starts](https://sd.agentic-solutions.net/#/concept/cca-session-management): Resume a named session when its context is still true, fork it to explore alternatives, and start fresh with a structured summary when its tool results have gone stale.
+- [Structured Error Responses for MCP Tools](https://sd.agentic-solutions.net/#/concept/cca-mcp-errors): A tool error is something the agent acts on. Flag it with isError, say what kind of failure it is and whether a retry can help, so the agent retries, fixes its input, explains, or escalates as appropriate.
+- [Structured Output with Tools & JSON Schemas](https://sd.agentic-solutions.net/#/concept/cca-structured-output): Define the output as a tool's input schema, control tool_choice, and design fields (nullable, enums with "other"/"unclear") so the model never has to make up a value to satisfy the schema.
+- [Subagent Invocation, Context Passing & Spawning](https://sd.agentic-solutions.net/#/concept/cca-subagent-context): Subagents are spawned through the Task/Agent tool, configured with AgentDefinition, and know only what the delegation prompt hands them — so pack it with complete, structured context.
+- [Task Decomposition Strategies](https://sd.agentic-solutions.net/#/concept/cca-task-decomposition): Predictable work gets a fixed prompt chain; open-ended work gets an adaptive plan that rewrites itself as discoveries come in.
+- [Tool Interfaces: Descriptions & Boundaries](https://sd.agentic-solutions.net/#/concept/cca-tool-descriptions): The model picks tools by reading their names and descriptions, so a tool description is a routing rule. Make each one say what it does, what it takes, what it returns, and when to use something else.
+- [Validation, Retry & Feedback Loops](https://sd.agentic-solutions.net/#/concept/cca-validation-retry): Validate meaning in code, retry with the specific errors (not a blind re-roll), know when a retry cannot help, and record which pattern triggered each finding so dismissals can be analysed.
+- [Workflow Enforcement & Handoff Patterns](https://sd.agentic-solutions.net/#/concept/cca-workflow-enforcement): Prompts guide; code enforces. Gate critical steps programmatically, split multi-concern requests into tracked items, and escalate with a structured handoff a human can act on cold.
+
+## System Designs
+
+### Easy
+
+- [Authentication System](https://sd.agentic-solutions.net/#/design/authentication-system): Prove who someone is, cheaply on every request and expensively only when it matters — and be able to take it back.
+- [Content Delivery Network (CDN)](https://sd.agentic-solutions.net/#/design/cdn-design): Put copies of content a few milliseconds from every user, and protect the origin from the internet.
+- [Distributed Cache](https://sd.agentic-solutions.net/#/design/distributed-cache): Sub-millisecond reads for millions of requests per second — and a plan for when the cache lies or dies.
+- [Distributed Key-Value Store](https://sd.agentic-solutions.net/#/design/key-value-store): get(key) and put(key, value) — on hundreds of machines, always writable, even while some are dying.
+- [Load Balancer](https://sd.agentic-solutions.net/#/design/load-balancer): Spread a million requests per second over a thousand servers — and never be the thing that breaks.
+- [Parking Garage System](https://sd.agentic-solutions.net/#/design/parking-garage): Sell parking in advance, let cars in and out in seconds, and never promise the same spot twice.
+- [Search Autocomplete](https://sd.agentic-solutions.net/#/design/search-autocomplete): Return the 10 best completions for every keystroke in under 100 ms, from billions of past queries.
+- [Unified Payments Interface (UPI)](https://sd.agentic-solutions.net/#/design/upi-payments): Move money between any two bank accounts in India in seconds, using just an address like ada@okaxis.
+- [URL Shortener](https://sd.agentic-solutions.net/#/design/url-shortener): Turn long links into 7-character codes and redirect billions of clicks a day.
+- [Vending Machine (+ Fleet Management)](https://sd.agentic-solutions.net/#/design/vending-machine): A tiny state machine that must never take money without dropping a can — times 100,000 machines.
+
+### Medium
+
+- [Async AI Image / Video Generation](https://sd.agentic-solutions.net/#/design/ai-image-generation): Turn millions of text prompts a day into images and short videos on a fleet of expensive GPUs — fairly, safely, and without charging anyone twice.
+- [Code Generation with Claude Code](https://sd.agentic-solutions.net/#/design/cca-code-generation): Configure Claude Code so every engineer gets the same conventions, the right workflow commands, and plans before big changes — without drowning the context window.
+- [Conversational Assistant with Memory](https://sd.agentic-solutions.net/#/design/conversational-assistant): An assistant that remembers you across sessions and channels, stays in character, knows its limits, and hands off to a human when it should.
+- [Design Facebook (News Feed)](https://sd.agentic-solutions.net/#/design/facebook-newsfeed): For each of two billion people, pick the ~20 most relevant stories out of thousands — in a few hundred milliseconds.
+- [Digital Wallet](https://sd.agentic-solutions.net/#/design/digital-wallet): Hold balances for 100 million people and move money between any two of them instantly — without ever creating, losing or double-spending a cent.
+- [Distributed Job Scheduler](https://sd.agentic-solutions.net/#/design/job-scheduler): Run millions of cron and one-off jobs on time, exactly when asked, without ever running one twice by accident.
+- [Distributed Message Queue](https://sd.agentic-solutions.net/#/design/kafka-message-queue): A partitioned, replicated, append-only log that moves millions of messages a second and lets any number of consumers replay history.
+- [Distributed Rate Limiter](https://sd.agentic-solutions.net/#/design/rate-limiter): Decide in under a millisecond whether request #1,000,001 from this API key is allowed, across hundreds of servers and several regions.
+- [E-commerce Marketplace](https://sd.agentic-solutions.net/#/design/amazon-ecommerce): Browse hundreds of millions of products, keep a cart that never fails to add, and never sell the same last unit twice.
+- [Flight Booking System](https://sd.agentic-solutions.net/#/design/flight-booking): Search hundreds of airlines in seconds, hold a seat for 15 minutes, and turn a payment into a ticket without ever charging for a seat you did not get.
+- [Instagram (Photo Sharing & Feed)](https://sd.agentic-solutions.net/#/design/instagram): Upload a photo once, show it in a few hundred million ranked feeds, and count a million likes a minute.
+- [LLM Chat App (ChatGPT-like)](https://sd.agentic-solutions.net/#/design/llm-chat-app): Stream tokens to millions of people at once, keep every conversation inside a finite context window, and know what each answer cost.
+- [Metrics & Logging Platform](https://sd.agentic-solutions.net/#/design/metrics-logging-platform): Swallow tens of millions of data points and gigabytes of logs per second, keep them cheaply for months, and still answer "what broke?" in under a second.
+- [Multi-tenant Commerce Platform](https://sd.agentic-solutions.net/#/design/shopify): Millions of independent stores on one shared platform — where any one of them might go viral at 9:00:00 sharp.
+- [Netflix](https://sd.agentic-solutions.net/#/design/netflix): Stream video to 300M members by pushing the bytes into ISPs overnight and running everything else on AWS.
+- [Notification Service](https://sd.agentic-solutions.net/#/design/notification-service): One API for push, SMS, email and in-app — respecting preferences, limits and priorities, at 100K sends a second.
+- [Online Code Editor & Judge](https://sd.agentic-solutions.net/#/design/online-code-editor): Run strangers' code safely: thousands of untrusted submissions a minute, each in a locked-down sandbox, judged against hidden tests in seconds.
+- [Payment System](https://sd.agentic-solutions.net/#/design/payment-system): Move money exactly once through networks that time out, retry, and disagree — and prove every cent with a double-entry ledger.
+- [Product Catalog at Scale](https://sd.agentic-solutions.net/#/design/product-catalog): One trusted record per product, projected into fast read models, search indexes and edge caches for hundreds of millions of shoppers.
+- [Reddit](https://sd.agentic-solutions.net/#/design/reddit): Communities, posts, endlessly nested comment threads and a voting system that decides what billions of page views see.
+- [Retrieval-Augmented Generation (enterprise doc Q&A)](https://sd.agentic-solutions.net/#/design/rag-system): Answer employees' questions from millions of internal documents — only from documents they are allowed to see, with citations, and fresh within minutes.
+- [Short-Video Feed](https://sd.agentic-solutions.net/#/design/tiktok): An infinite feed where every swipe is a training signal and the next video is already downloaded.
+- [Spotify (Music Streaming)](https://sd.agentic-solutions.net/#/design/spotify): Start any of 100 million tracks in under 300 ms, anywhere, and guess what you want to hear next.
+- [Tinder (Swipe-Based Matching)](https://sd.agentic-solutions.net/#/design/tinder): Show each person a stack of nearby profiles, absorb billions of swipes a day, and spot every mutual like instantly.
+- [Twitter / X (Timelines)](https://sd.agentic-solutions.net/#/design/twitter): Deliver 500M tweets a day into hundreds of millions of home timelines — even when the sender has 100M followers.
+- [Vacation Rental Marketplace](https://sd.agentic-solutions.net/#/design/airbnb): Search millions of homes by map and dates, quote the exact price, and make sure no two guests ever get the same night.
+- [Web Search Engine](https://sd.agentic-solutions.net/#/design/google-search): Search hundreds of billions of pages in a few hundred milliseconds by asking thousands of machines at once.
+- [WhatsApp (Chat Messaging)](https://sd.agentic-solutions.net/#/design/whatsapp): Deliver 100 billion end-to-end encrypted messages a day over millions of always-on connections.
+- [YouTube](https://sd.agentic-solutions.net/#/design/youtube): Accept 500+ hours of video every minute, turn each upload into dozens of streams, and serve a billion hours a day.
+
+### Hard
+
+- [Claude Code in CI/CD: PR Review & Test Generation](https://sd.agentic-solutions.net/#/design/cca-ci-review): Automated pull-request review that developers actually trust: structured findings, inline comments, no duplicates on re-review, and a false-positive rate low enough that people read every comment.
+- [Code Deployment System](https://sd.agentic-solutions.net/#/design/code-deployment): Ship thousands of changes a day to hundreds of thousands of hosts — and undo a bad one before customers notice.
+- [Collaborative Editor (Google Docs)](https://sd.agentic-solutions.net/#/design/google-docs): Let fifty people type into the same paragraph at once, offline or online, and make every screen end up with exactly the same text.
+- [Customer Support Resolution Agent](https://sd.agentic-solutions.net/#/design/cca-support-agent): Resolve 80%+ of returns, billing disputes and account issues on first contact — and hand the rest to a human with everything they need.
+- [Developer Productivity Agent](https://sd.agentic-solutions.net/#/design/cca-dev-productivity): An internal agent that helps engineers understand a 15-year-old codebase, generate boilerplate and automate chores — by picking the right tool for each step and never drowning in its own search results.
+- [Distributed Lock Service](https://sd.agentic-solutions.net/#/design/distributed-lock-service): Let thousands of machines agree on who holds a lock or who is leader — even while servers crash and networks split.
+- [Distributed Object Storage](https://sd.agentic-solutions.net/#/design/s3-object-storage): Store trillions of objects, never lose one, and make every write instantly visible.
+- [Distributed Web Crawler](https://sd.agentic-solutions.net/#/design/web-crawler): Download billions of pages a month — politely, without loops, duplicates or getting stuck in traps.
+- [File Sync & Storage](https://sd.agentic-solutions.net/#/design/dropbox): Keep a folder identical on every device: chunk, dedup, upload only what changed, and tell other devices instantly.
+- [Food Delivery (DoorDash)](https://sd.agentic-solutions.net/#/design/doordash): Coordinate a customer, a kitchen and a driver so hot food arrives in 35 minutes, millions of times a day.
+- [LLM Inference Serving & AI Gateway](https://sd.agentic-solutions.net/#/design/model-serving-gateway): Serve billions of tokens a day across many models and providers: squeeze every token out of each GPU, and give every team one safe, metered front door.
+- [Maps & Navigation (Google Maps)](https://sd.agentic-solutions.net/#/design/google-maps): Draw the whole planet at 20 zoom levels, find the fastest route across a continent in milliseconds, and know about the traffic jam that started two minutes ago.
+- [Multi-Agent Research System](https://sd.agentic-solutions.net/#/design/cca-research-system): A coordinator splits a research question across search, analysis, synthesis and report subagents — and every claim in the final report still points at its source.
+- [Multi-Region Infrastructure & Control Plane](https://sd.agentic-solutions.net/#/design/multi-region-infra): Run one product from many regions so that a whole region can burn down — or a bad config can ship — and most users never notice.
+- [Proximity Service (Yelp)](https://sd.agentic-solutions.net/#/design/yelp-proximity): Find the best open ramen shops within 2 km of you, out of 200 million places, in under 200 ms.
+- [Real-Time Stream Analytics](https://sd.agentic-solutions.net/#/design/stream-analytics): Count a million ad clicks a second, by the minute they happened, exactly once, and have the dashboard agree with the invoice.
+- [Real-Time Voice AI Agent](https://sd.agentic-solutions.net/#/design/realtime-voice-agent): Hold a natural phone conversation with an AI that answers in under 800 ms, lets you interrupt it, and books your appointment mid-sentence.
+- [Ride Hailing (Uber)](https://sd.agentic-solutions.net/#/design/uber): Track a million moving cars, match a rider to the right one in seconds, price it, and never assign one driver to two trips.
+- [Structured Data Extraction Pipeline](https://sd.agentic-solutions.net/#/design/cca-data-extraction): Turn invoices, contracts and forms into schema-valid records that downstream systems can trust — with validation that catches what schemas cannot, and humans reviewing exactly the cases that need them.
+- [Ticket Booking System](https://sd.agentic-solutions.net/#/design/bookmyshow): Sell each seat exactly once — even when ten million fans click “Book” in the same minute.
+- [Tool-Using AI Agent Platform](https://sd.agentic-solutions.net/#/design/ai-agent-platform): Let LLMs plan, call tools and run code for minutes or hours — durably, inside a sandbox, within budget, with a human in the loop for anything irreversible.
+- [Video Conferencing (Zoom)](https://sd.agentic-solutions.net/#/design/zoom): Put 50 people from five continents into one call with under 150 ms of delay, on networks ranging from fibre to hotel Wi-Fi.
+
+## Company Case Studies
+
+- [Airbnb: Avoiding Double Payments with Orpheus](https://sd.agentic-solutions.net/#/company/airbnb-double-payments): An idempotency library that splits every payment request into DB → network → DB phases, so clients can retry forever and money moves at most once.
+- [Canva: Scaling Media to 50M Uploads/Day](https://sd.agentic-solutions.net/#/company/canva-media-uploads): How Canva moved billions of media records off RDS MySQL and onto DynamoDB live, with zero downtime, using a queue that never carried the data.
+- [Dropbox Magic Pocket: Exabyte Block Storage](https://sd.agentic-solutions.net/#/company/dropbox-magic-pocket): Immutable 4 MB blocks, a sharded-MySQL index, cells of dumb storage boxes, erasure coding, and verifiers that never sleep.
+- [Figma: Multiplayer Editing Without OT](https://sd.agentic-solutions.net/#/company/figma-multiplayer): One authoritative process per document, last-writer-wins per property, and CRDT ideas without CRDT overhead.
+- [How Discord Stores Trillions of Messages](https://sd.agentic-solutions.net/#/company/discord-messages): From a 177-node Cassandra cluster on fire to 72 quiet ScyllaDB nodes, with Rust data services soaking up the hot spots.
+- [Instagram: Sharding and 64-bit IDs in Postgres](https://sd.agentic-solutions.net/#/company/instagram-id-sharding): Thousands of logical shards as Postgres schemas, and time-sortable 64-bit IDs minted by a tiny PL/pgSQL function.
+- [Netflix In-Video Search](https://sd.agentic-solutions.net/#/company/netflix-in-video-search): Type "car exploding" and get the exact shots from the whole catalog, using precomputed shot embeddings and nearest-neighbour search.
+- [Slack: Real-time Messaging at Global Scale](https://sd.agentic-solutions.net/#/company/slack-realtime-messaging): Channel Servers on a consistent-hash ring, regional Gateway Servers holding WebSockets, and a ~500 ms worldwide fan-out.
+- [Stripe: From Charges to PaymentIntents](https://sd.agentic-solutions.net/#/company/stripe-payments-api): How "seven lines of code" for US cards grew into one state machine that can model every payment method in the world.
+- [Uber RAMEN: From Polling to Real-time Push](https://sd.agentic-solutions.net/#/company/uber-realtime-push): Replacing the polling that made up ~80% of API traffic with a push platform: Fireball decides when, the gateway decides what, Streamgate delivers.
+
+## Papers
+
+- [Bigtable](https://sd.agentic-solutions.net/#/paper/paper-bigtable): A Distributed Storage System for Structured Data: a sparse, sorted, multi-versioned map spread over thousands of machines.
+- [Chubby](https://sd.agentic-solutions.net/#/paper/paper-chubby): The Chubby lock service for loosely-coupled distributed systems: Paxos packaged as a tiny, highly available file system with locks.
+- [Dynamo](https://sd.agentic-solutions.net/#/paper/paper-dynamo): Amazon's Highly Available Key-value Store: always accept the write, sort out conflicts later.
+- [Kafka](https://sd.agentic-solutions.net/#/paper/paper-kafka): A Distributed Messaging System for Log Processing: a message queue rebuilt as an append-only, partitioned log.
+- [MapReduce](https://sd.agentic-solutions.net/#/paper/paper-mapreduce): Simplified Data Processing on Large Clusters: write two small functions, and the framework runs them on thousands of machines.
+- [Paxos](https://sd.agentic-solutions.net/#/paper/paper-paxos): The Part-Time Parliament: how a group of unreliable machines can agree on one value, and then on a whole log of them.
+- [Spanner](https://sd.agentic-solutions.net/#/paper/paper-spanner): Google's Globally-Distributed Database: SQL-style transactions across continents, made possible by clocks that admit their own uncertainty.
+- [The Google File System (GFS)](https://sd.agentic-solutions.net/#/paper/paper-gfs): One master, many chunkservers, 64 MB chunks in triplicate: a file system built for huge files on failing hardware.
+- [The Log-Structured Merge-Tree (LSM-Tree)](https://sd.agentic-solutions.net/#/paper/paper-lsm-tree): Buffer writes in memory, then merge them to disk in big sorted batches — trading a little read cost for massive write throughput.
+- [ZooKeeper](https://sd.agentic-solutions.net/#/paper/paper-zookeeper): Wait-free Coordination for Internet-scale Systems: a tiny replicated file tree that lets you build locks, leader election and config yourself.
+
+## Simulators
+
+- [Back-of-the-Envelope Estimator](https://sd.agentic-solutions.net/#/playground#estimator): Turn DAU and a few assumptions into QPS, storage, bandwidth, server count and cache size — with every formula shown.
+- [Bloom Filter](https://sd.agentic-solutions.net/#/playground#bloom-filter): Add words to an m-bit array with k hash functions, query words, and catch a false positive in the act. The false-positive formula updates live.
+- [Cache Eviction Policies](https://sd.agentic-solutions.net/#/playground#cache-eviction): Replay the same access pattern through LRU, LFU, FIFO, Random and the clairvoyant optimal policy side by side, and see which one keeps the right keys.
+- [Caching Patterns Playground](https://sd.agentic-solutions.net/#/playground#caching-patterns): Cache-aside, read-through, write-through, write-behind and write-around: read and write keys, watch which hops fire, and find the stale reads and lost writes.
+- [CAP Theorem: Partition Lab](https://sd.agentic-solutions.net/#/playground#cap-theorem): Three replicas, two clients, one network cable you can cut. Choose CP or AP and watch errors, stale reads and lost writes appear.
+- [Circuit Breaker](https://sd.agentic-solutions.net/#/playground#circuit-breaker): Two identical services call the same flaky dependency — one through a circuit breaker, one without. Break the dependency and watch threads, latency and errors.
+- [Consistent Hashing Ring](https://sd.agentic-solutions.net/#/playground#consistent-hashing): Add and remove servers, change virtual nodes, and watch how many keys move compared to modulo hashing.
+- [Gossip Protocol Spread](https://sd.agentic-solutions.net/#/playground#gossip): One node learns a rumor. Each round every informed node tells a few random peers. Watch it reach everyone in ~log(N) rounds — even with failures.
+- [Idempotency Keys: Safe Payment Retries](https://sd.agentic-solutions.net/#/playground#idempotency): A client pays $100 over a flaky network and retries when the response is lost. Without an idempotency key the customer is charged twice.
+- [Load Balancing Algorithms](https://sd.agentic-solutions.net/#/playground#load-balancer): Route live traffic to servers of different sizes with six algorithms. Kill and add servers, make some requests slow, and watch queues and latency respond.
+- [Message Queue vs Pub/Sub](https://sd.agentic-solutions.net/#/playground#queue-vs-pubsub): The same producer feeds a work queue with competing consumers and a pub/sub topic with independent subscribers. Crash, slow down and scale them.
+- [Quorum Reads & Writes](https://sd.agentic-solutions.net/#/playground#quorum-replication): Tune N, W and R, take replicas down or make them slow, then write and read. See exactly when you get stale data and why R + W > N prevents it.
+- [Raft Leader Election & Log Replication](https://sd.agentic-solutions.net/#/playground#raft-election): A 5-node Raft cluster. Kill the leader, partition a node, force a split vote, and replicate client writes to a majority.
+- [RAG Evaluation Lab](https://sd.agentic-solutions.net/#/playground#rag-eval-metrics): Mark relevant results and watch recall, precision, MRR and nDCG change; step an LLM judge through claim-level faithfulness; and find out how many golden questions you need to trust a 2-point win.
+- [RAG Pipeline Lab](https://sd.agentic-solutions.net/#/playground#rag-pipeline): Ask questions over a tiny HR/IT knowledge base. Switch between vector, BM25 and hybrid retrieval, toggle query rewriting, reranking and grounding, and watch recall, cost and the answer change.
+- [Rate Limiter Algorithms](https://sd.agentic-solutions.net/#/playground#rate-limiter): Fire the same traffic at five rate-limiting algorithms side by side. Watch bucket and window state, what gets accepted or rejected, and how a fixed window lets through 2× the limit at a boundary.
+- [Roaring Bitmap Explorer](https://sd.agentic-solutions.net/#/playground#roaring-bitmap): Build two real id sets over a 1M-id universe, watch each 65,536-id chunk pick an array, bitmap or run container, then AND / OR / ANDNOT them as a permission-aware RAG filter would.
+- [Sharding Strategies](https://sd.agentic-solutions.net/#/playground#sharding): Insert random user ids, sequential timestamps or a celebrity's posts into range, hash or directory sharding. Spot hot shards, then add a shard and count how much data has to move.
+- [TCP vs UDP on a Lossy Network](https://sd.agentic-solutions.net/#/playground#tcp-vs-udp): Send 20 packets through a network with loss and jitter. TCP handshakes, ACKs, retransmits and delivers in order; UDP just fires and forgets.
+
+## Optional
+
+- [Learning Path](https://sd.agentic-solutions.net/#/path): guided ordering through the material.
+- [Design Framework](https://sd.agentic-solutions.net/#/framework): step-by-step approach for any design problem.
+- [Claude Certification Prep](https://sd.agentic-solutions.net/#/cert): agentic-coding exam scenarios.
